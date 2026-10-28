@@ -303,6 +303,10 @@
     ArrowUp: [1, 'up'], ArrowDown: [1, 'down'], ArrowLeft: [1, 'left'], ArrowRight: [1, 'right'],
   };
   const GRASS = ['#aad751', '#a2d149'];
+  // Späte Eingaben (Anteil eines Schritts): Wer kurz nach dem Erreichen eines Feldes lenkt, biegt noch
+  // auf diesem Feld ab. Vor einem Hindernis bleibt genauso lange Zeit zum Ausweichen.
+  const GRACE = 0.35;
+  const SWING_MS = 80;
 
   const settings = Object.assign({ mode: 'classic', speed: 'normal', size: 'm', apples: 1, color: 'blue' }, store.get('settings', {}));
   if (!MODES.some((m) => m.id === settings.mode)) settings.mode = 'classic';
@@ -377,7 +381,7 @@
     return {
       body, prevTail: null, grew: true, moved: false, dir: d, queue: [], ate: false,
       color: COLORS[colorKey].hex, name: COLORS[colorKey].name, alive: true, deadAt: 0, score: 0,
-      blinkAt: now + 1200 + Math.random() * 2000,
+      blinkAt: now + 1200 + Math.random() * 2000, turned: false, blocked: null, swing: null,
     };
   }
 
@@ -479,6 +483,7 @@
     if (g.state !== 'ready' && g.state !== 'play') return;
     const s = g.snakes[idx];
     if (!s || !s.alive) return;
+    if (g.state === 'play' && lateTurn(s, d)) return;
     const last = s.queue.length ? s.queue[s.queue.length - 1] : s.dir;
     const same = d.x === last.x && d.y === last.y, back = d.x === -last.x && d.y === -last.y;
     if (s.queue.length < 3 && !same && !back) s.queue.push(d);
@@ -496,25 +501,51 @@
     updateHud();
   }
 
+  const inside = (x, y) => x >= 0 && y >= 0 && x < G.cols && y < G.rows;
+
+  // Zielfeld, wenn Schlange s in Richtung d weiterkriecht (mit Portal und Rand-Durchgang)
+  function plan(s, d) {
+    const g = G, h = s.body[0];
+    let x = h.x + d.x, y = h.y + d.y, j = null;
+    const exit = portalExit(h.x, h.y);
+    if (exit) { x = exit.x + d.x; y = exit.y + d.y; j = 'portal'; }
+    if (g.mode.wrap && !inside(x, y)) { x = (x + g.cols) % g.cols; y = (y + g.rows) % g.rows; j = j || 'wrap'; }
+    return { s, x, y, d, j, apple: g.apples.find((a) => a.x === x && a.y === y) || null, dead: null };
+  }
+
+  function applyMove(s, p) {
+    s.body.unshift({ x: p.x, y: p.y, d: p.d, j: p.j });
+    if (p.apple) { s.grew = true; s.prevTail = null; }
+    else { s.grew = false; s.prevTail = s.body.pop(); }
+    s.moved = true;
+    s.ate = false;
+    if (p.j === 'portal') Sound.portal();
+  }
+
+  function kill(s, d, now) {
+    const h = s.body[0];
+    s.alive = false;
+    s.moved = false;
+    s.deadAt = now;
+    burst(h.x + d.x * 0.45, h.y + d.y * 0.45, ['#ffffff', '#e4f1d2', '#a5a5a5'], 0, now, 10);
+  }
+
   function step(now) {
     const g = G, m = g.mode;
+    if (resolveBlocked(now)) return;
     g.tick++;
     g.eaten = [];
-    const inside = (x, y) => x >= 0 && y >= 0 && x < g.cols && y < g.rows;
     const key = (x, y) => y * g.cols + x;
     const live = g.snakes.filter((s) => s.alive);
-    for (const s of live) if (s.queue.length) s.dir = s.queue.shift();
-
-    // Zielfeld jeder Schlange
-    const plans = live.map((s) => {
-      const h = s.body[0], d = s.dir;
-      let x = h.x + d.x, y = h.y + d.y, j = null;
-      const exit = portalExit(h.x, h.y);
-      if (exit) { x = exit.x + d.x; y = exit.y + d.y; j = 'portal'; }
-      if (m.wrap && !inside(x, y)) { x = (x + g.cols) % g.cols; y = (y + g.rows) % g.rows; j = j || 'wrap'; }
-      const apple = g.apples.find((a) => a.x === x && a.y === y) || null;
-      return { s, x, y, d, j, apple, dead: null };
-    });
+    for (const s of live) {
+      s.turned = false;
+      while (s.queue.length) {
+        const q = s.queue.shift();
+        const same = q.x === s.dir.x && q.y === s.dir.y, back = q.x === -s.dir.x && q.y === -s.dir.y;
+        if (!same && !back) { s.dir = q; s.turned = true; break; }
+      }
+    }
+    const plans = live.map((s) => plan(s, s.dir));
 
     // Belegung nach dem Zug (der Schwanz rückt nach, außer beim Wachsen)
     const occ = new Set(), heads = new Map();
@@ -524,53 +555,122 @@
       if (inside(p.x, p.y)) heads.set(key(p.x, p.y), (heads.get(key(p.x, p.y)) || 0) + 1);
     }
     for (const p of plans) {
+      const at = (c) => c.x === p.x && c.y === p.y;
       if (!inside(p.x, p.y)) p.dead = 'wall';
-      else if (g.stones.some((c) => c.x === p.x && c.y === p.y)) p.dead = 'stone';
+      else if (g.stones.some(at)) p.dead = 'stone';
       else if (!m.peaceful && occ.has(key(p.x, p.y))) p.dead = 'body';
       else if (heads.get(key(p.x, p.y)) > 1) p.dead = 'head';
+      else if (g.poison.some(at)) p.dead = 'poison';
     }
 
     let ended = null;
     for (const p of plans) {
-      const s = p.s;
-      if (p.dead) {
-        s.alive = false; s.moved = false; s.deadAt = now;
-        const h = s.body[0];
-        burst(h.x + p.d.x * 0.45, h.y + p.d.y * 0.45, ['#ffffff', '#e4f1d2', '#a5a5a5'], 0, now, 10);
-        ended = 'crash';
-        continue;
-      }
-      s.body.unshift({ x: p.x, y: p.y, d: p.d, j: p.j });
-      if (p.apple) { s.grew = true; s.prevTail = null; }
-      else { s.grew = false; s.prevTail = s.body.pop(); }
-      s.moved = true; s.ate = false;
-      if (p.j === 'portal') Sound.portal();
+      if (!p.dead) { applyMove(p.s, p); continue; }
+      p.s.moved = false;
+      // Allein wartet die Schlange kurz vor dem Hindernis: Ein später Tastendruck rettet sie noch (lateTurn)
+      if (!m.duo) { p.s.blocked = p; continue; }
+      kill(p.s, p.d, now);
+      ended = 'crash';
     }
-    for (const p of plans) {
-      if (p.dead) continue;
-      const s = p.s;
-      if (p.apple) eat(s, p.apple, now);
-      const poison = g.poison.find((c) => c.x === p.x && c.y === p.y);
-      if (poison) {
-        g.poison.splice(g.poison.indexOf(poison), 1);
-        g.eaten.push({ x: poison.x, y: poison.y, kind: 'poison', tick: g.tick });
-        burst(poison.x, poison.y, ['#8e3fc4', '#c58cf2', '#55197f'], g.interval * 0.4, now, 14);
-        s.alive = false; s.deadAt = now + g.interval * 0.5;
-        ended = 'poison';
-      }
-    }
+    for (const p of plans) if (!p.dead && p.apple) eat(p.s, p.apple, now);
     if (!ended && g.apples.length === 0) ended = 'win';
     if (ended) endGame(ended);
     updateHud();
   }
 
-  function eat(s, apple, now) {
+  // Gnadenfrist abgelaufen: Die blockierte Schlange crasht oder beißt in den Giftapfel.
+  function resolveBlocked(now) {
+    const g = G, s = g.snakes.find((x) => x.blocked);
+    if (!s) return false;
+    const p = s.blocked;
+    s.blocked = null;
+    if (p.dead === 'poison') {
+      const t = clamp(g.acc / g.interval, 0, 1), before = headPos(s, t);
+      applyMove(s, p);
+      startSwing(s, before, t, now);
+      g.poison = g.poison.filter((c) => c.x !== p.x || c.y !== p.y);
+      g.eaten.push({ x: p.x, y: p.y, kind: 'poison', tick: g.tick, from: t });
+      burst(p.x, p.y, ['#8e3fc4', '#c58cf2', '#55197f'], g.interval * Math.max(0, 0.4 - t), now, 14);
+      s.alive = false;
+      s.deadAt = now + g.interval * Math.max(0, 0.5 - t);
+      endGame('poison');
+    } else {
+      kill(s, p.d, now);
+      endGame('crash');
+    }
+    return true;
+  }
+
+  // Später Tastendruck kurz nach einem Schritt: Der letzte Zug wird umgeschrieben, als wäre die Taste
+  // rechtzeitig gekommen. Steht die Schlange vor einem Hindernis, weicht sie so noch aus.
+  function lateTurn(s, d) {
+    const g = G;
+    if (g.acc > g.interval * GRACE) return false;
+    const now = performance.now(), t = g.acc / g.interval, before = headPos(s, t);
+    let undo = null;
+    if (s.blocked) {
+      const h = s.body[0];
+      if (d.x === -h.d.x && d.y === -h.d.y) return false;
+    } else {
+      const D = s.dir;
+      if (s.queue.length || s.turned || s.grew || !s.moved) return false;
+      if ((d.x === D.x && d.y === D.y) || (d.x === -D.x && d.y === -D.y)) return false;
+      undo = s.body.shift();
+      s.body.push(s.prevTail);
+    }
+    const p = plan(s, d);
+    if (isDeadly(s, p)) {
+      if (undo) { s.prevTail = s.body.pop(); s.body.unshift(undo); }
+      return false;
+    }
+    s.blocked = null;
+    s.queue.length = 0;
+    s.dir = d;
+    s.turned = true;
+    applyMove(s, p);
+    startSwing(s, before, t, now);
+    if (p.apple) {
+      eat(s, p.apple, now, t);
+      if (!g.apples.length) endGame('win');
+    }
+    updateHud();
+    return true;
+  }
+
+  function isDeadly(s, p) {
+    const g = G, at = (c) => c.x === p.x && c.y === p.y;
+    if (!inside(p.x, p.y) || g.stones.some(at) || g.poison.some(at)) return true;
+    const tail = s.body[s.body.length - 1];
+    for (const o of g.snakes) {
+      if (o !== s) {
+        if (o.body.some(at)) return true;
+        if (p.apple && o.body.some((c) => c.x === tail.x && c.y === tail.y)) return true; // Schwanz bleibt liegen
+      } else if (!g.mode.peaceful) {
+        const keep = p.apple ? s.body.length : s.body.length - 1;
+        for (let i = 0; i < keep; i++) if (at(s.body[i])) return true;
+      }
+    }
+    return false;
+  }
+
+  function headPos(s, t) {
+    const pc = snakePieces(s, s.moved ? t : 1);
+    return pc.length ? pc[0][0] : { x: s.body[0].x, y: s.body[0].y };
+  }
+
+  // Nach einem nachträglichen Abbiegen gleitet der Kopf kurz herüber, statt zu springen
+  function startSwing(s, before, t, now) {
+    const after = headPos(s, t), dx = before.x - after.x, dy = before.y - after.y;
+    s.swing = Math.abs(dx) + Math.abs(dy) < 1.5 ? { dx, dy, at: now } : null;
+  }
+
+  function eat(s, apple, now, t0 = 0) {
     const g = G, m = g.mode;
     g.apples.splice(g.apples.indexOf(apple), 1);
-    g.eaten.push({ x: apple.x, y: apple.y, kind: 'apple', tick: g.tick });
+    g.eaten.push({ x: apple.x, y: apple.y, kind: 'apple', tick: g.tick, from: t0 });
     s.score++;
     s.ate = true;
-    const delay = g.interval * 0.45;
+    const delay = g.interval * Math.max(0, 0.45 - t0);
     burst(apple.x, apple.y, ['#e7471d', '#ff8559', '#ffd54f', '#7cc04a'], delay, now, 12);
     g.floaters.push({ x: apple.x + 0.5, y: apple.y - 0.1, text: '+1', born: now + delay, life: 750, color: m.duo ? s.color : '#ffffff' });
     Sound.eat();
@@ -633,6 +733,7 @@
       }
       g.acc += dt;
       while (g.state === 'play' && g.acc >= g.interval) { g.acc -= g.interval; step(now); }
+      if (g.state === 'play' && g.acc > g.interval * GRACE) resolveBlocked(now);
     } else if (g.state === 'over') {
       g.acc = Math.min(g.interval, g.acc + dt);
     }
@@ -728,7 +829,8 @@
     g.poison.forEach((a) => drawApple(a, 'poison', now));
     g.apples.forEach((a) => drawApple(a, 'apple', now));
     for (const e of g.eaten) {
-      if (e.tick === g.tick && t < 0.5) drawAppleShape((e.x + 0.5) * cell, (e.y + 0.5) * cell, cell * 0.36 * (1 - t / 0.5), e.kind);
+      const k = 1 - (t - e.from) / 0.5;
+      if (e.tick === g.tick && k > 0) drawAppleShape((e.x + 0.5) * cell, (e.y + 0.5) * cell, cell * 0.36 * Math.min(1, k), e.kind);
     }
     ctx.save();
     ctx.beginPath();
@@ -894,6 +996,14 @@
   function drawSnake(s, t, now) {
     const pieces = snakePieces(s, t);
     if (!pieces.length) return;
+    if (s.swing) {
+      const k = 1 - (now - s.swing.at) / SWING_MS;
+      if (k <= 0) s.swing = null;
+      else {
+        const h = pieces[0][0], e = k * k;
+        pieces[0][0] = { x: h.x + s.swing.dx * e, y: h.y + s.swing.dy * e };
+      }
+    }
     const c = cell, lw = c * 0.74;
     let col = s.color;
     if (!s.alive && now >= s.deadAt) {
@@ -1256,7 +1366,7 @@
     if (!swipe) return;
     e.preventDefault();
     const tp = e.touches[0], dx = tp.clientX - swipe.x, dy = tp.clientY - swipe.y;
-    if (Math.max(Math.abs(dx), Math.abs(dy)) < 18) return;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < 14) return;
     input(0, Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? DIRS.right : DIRS.left) : (dy > 0 ? DIRS.down : DIRS.up));
     swipe = { x: tp.clientX, y: tp.clientY, moved: true };
   }, { passive: false });
