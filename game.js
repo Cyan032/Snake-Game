@@ -53,14 +53,14 @@
   ];
   const PARKOUR = { id: 'parkour', icon: '🏁', name: 'Parkour', desc: 'Lenk dich bis zur Zielflagge.' };
   const CHAOS = [
-    { id: 'fast',   icon: '⚡', name: 'Turbo!', mul: 0.62 },
-    { id: 'slow',   icon: '🐢', name: 'Zeitlupe', mul: 1.5 },
-    { id: 'dark',   icon: '🔦', name: 'Licht aus!' },
-    { id: 'invert', icon: '🔄', name: 'Steuerung verdreht!' },
-    { id: 'ghost',  icon: '👻', name: 'Geist: durch dich hindurch' },
-    { id: 'double', icon: '💰', name: 'Doppelte Punkte' },
-    { id: 'rain',   icon: '🍎', name: 'Apfelregen!' },
-    { id: 'grow',   icon: '📏', name: 'Wachstumsschub!' },
+    { id: 'fast',   name: 'Turbo!', mul: 0.62 },
+    { id: 'slow',   name: 'Zeitlupe', mul: 1.5 },
+    { id: 'dark',   name: 'Licht aus!' },
+    { id: 'invert', name: 'Steuerung verdreht!' },
+    { id: 'ghost',  name: 'Geist: durch dich hindurch' },
+    { id: 'double', name: 'Doppelte Punkte' },
+    { id: 'rain',   name: 'Apfelregen!' },
+    { id: 'grow',   name: 'Wachstumsschub!' },
   ];
   const SPEEDS = { slow: 165, normal: 125, fast: 88 };
   const SIZES = { s: [10, 9], m: [17, 15], l: [24, 21], xl: [30, 26] };
@@ -77,27 +77,27 @@
     black:  { hex: '#3d4451', name: 'Schwarz' },
   };
   const THEMES = {
-    meadow: { name: 'Wiese', icon: '🌿', grass: ['#aad751', '#a2d149'], frame: '#578a34', hud: '#4a752c', page: ['#6fa344', '#3f6a24', '#294a15'],
+    meadow: { name: 'Wiese', grass: ['#aad751', '#a2d149'], frame: '#578a34', hud: '#4a752c', page: ['#6fa344', '#3f6a24', '#294a15'],
       wall: '#4f7f2c', wallTop: '#6c9e40', wallSide: '#365d1d', deco: 'grass', decoColor: 'rgba(60, 110, 25, 0.13)', line: 'rgba(255,255,255,0.45)' },
-    desert: { name: 'Wüste', icon: '🏜️', grass: ['#f2d58e', '#eacb7e'], frame: '#c99a4b', hud: '#a87a33', page: ['#efcd84', '#c29445', '#8c6526'],
+    desert: { name: 'Wüste', grass: ['#f2d58e', '#eacb7e'], frame: '#c99a4b', hud: '#a87a33', page: ['#efcd84', '#c29445', '#8c6526'],
       wall: '#d49a4c', wallTop: '#ebbb6c', wallSide: '#a4702e', deco: 'pebbles', decoColor: 'rgba(150, 105, 45, 0.22)', line: 'rgba(255,255,255,0.6)' },
-    snow:   { name: 'Schnee', icon: '❄️', grass: ['#f3f8fc', '#e5eff6'], frame: '#8fb6d1', hud: '#5d8db0', page: ['#d7ebf7', '#86afcd', '#557f9f'],
+    snow:   { name: 'Schnee', grass: ['#f3f8fc', '#e5eff6'], frame: '#8fb6d1', hud: '#5d8db0', page: ['#d7ebf7', '#86afcd', '#557f9f'],
       wall: '#9fd0ea', wallTop: '#d2edfa', wallSide: '#6aa5c8', deco: 'sparkle', decoColor: 'rgba(120, 165, 200, 0.35)', line: 'rgba(80,130,170,0.5)' },
-    night:  { name: 'Nacht', icon: '🌙', grass: ['#2f4b2b', '#2a4427'], frame: '#1d321a', hud: '#152613', page: ['#2a462c', '#132414', '#070f08'],
+    night:  { name: 'Nacht', grass: ['#2f4b2b', '#2a4427'], frame: '#1d321a', hud: '#152613', page: ['#2a462c', '#132414', '#070f08'],
       wall: '#1f3a1a', wallTop: '#30562a', wallSide: '#112410', deco: 'grass', decoColor: 'rgba(140, 200, 120, 0.10)', line: 'rgba(200,255,180,0.35)' },
-    lava:   { name: 'Vulkan', icon: '🌋', grass: ['#4a3935', '#423330'], frame: '#2a1c19', hud: '#3b2420', page: ['#5e2f1f', '#2b1611', '#140906'],
+    lava:   { name: 'Vulkan', grass: ['#4a3935', '#423330'], frame: '#2a1c19', hud: '#3b2420', page: ['#5e2f1f', '#2b1611', '#140906'],
       wall: '#2e2522', wallTop: '#4d3e39', wallSide: '#181210', deco: 'cracks', decoColor: 'rgba(255, 110, 40, 0.28)', line: 'rgba(255,150,80,0.5)' },
-    space:  { name: 'Weltraum', icon: '🪐', grass: ['#1f2248', '#1b1d40'], frame: '#121334', hud: '#1a1c4a', page: ['#2b2e70', '#11123a', '#06071a'],
+    space:  { name: 'Weltraum', grass: ['#1f2248', '#1b1d40'], frame: '#121334', hud: '#1a1c4a', page: ['#2b2e70', '#11123a', '#06071a'],
       wall: '#4b4f86', wallTop: '#7176b3', wallSide: '#2c2f5e', deco: 'stars', decoColor: 'rgba(255,255,255,0.55)', line: 'rgba(170,180,255,0.5)' },
   };
   const MAPS = {
-    open:    { name: 'Offen', icon: '⬜' },
-    cross:   { name: 'Kreuz', icon: '➕' },
-    corners: { name: 'Ecken', icon: '📐' },
-    pillars: { name: 'Säulen', icon: '🏛️' },
-    rooms:   { name: 'Räume', icon: '🚪' },
-    tunnel:  { name: 'Tunnel', icon: '🚇' },
-    random:  { name: 'Zufall', icon: '🎲' },
+    open:    { name: 'Offen' },
+    cross:   { name: 'Kreuz' },
+    corners: { name: 'Ecken' },
+    pillars: { name: 'Säulen' },
+    rooms:   { name: 'Räume' },
+    tunnel:  { name: 'Tunnel' },
+    random:  { name: 'Zufall' },
   };
   const AI_LEVELS = {
     easy:   { name: 'Leicht', mistake: 0.12, safe: false },
@@ -124,13 +124,13 @@
 
   const DEFAULTS = {
     mode: 'classic', speed: 'normal', size: 'm', apples: 1, bonus: 'on', theme: 'meadow', map: 'open', ai: 'normal',
-    color: 'blue', pattern: 'plain', hat: 'none', tier: 0, level: 0, tab: 'modes',
+    color: 'blue', pattern: 'plain', tier: 0, level: 0, tab: 'modes',
   };
   const settings = Object.assign({}, DEFAULTS, store.get('settings', {}));
   const VALID = {
     mode: MODES.map((m) => m.id), speed: Object.keys(SPEEDS), size: Object.keys(SIZES), apples: APPLE_COUNTS, bonus: ['on', 'off'],
     theme: Object.keys(THEMES), map: Object.keys(MAPS), ai: Object.keys(AI_LEVELS), color: Object.keys(COLORS),
-    pattern: ['plain', 'stripes', 'dots', 'rainbow'], hat: ['none', 'shades', 'crown', 'bow'], tier: [0, 1, 2, 3], tab: ['modes', 'parkour', 'settings'],
+    pattern: ['plain', 'stripes', 'dots', 'rainbow'], tier: [0, 1, 2, 3], tab: ['modes', 'parkour', 'settings'],
   };
   for (const k in VALID) if (!VALID[k].includes(settings[k])) settings[k] = DEFAULTS[k];
   if (!(settings.level >= 0 && settings.level < LEVELS.length)) settings.level = 0;
@@ -477,7 +477,7 @@
   }
 
   function spawnGold() {
-    if (spawn('apples', 3, { kind: 'gold', expires: G.clock + GOLD_MS })) toast('✨ Goldapfel – schnell, er verschwindet!');
+    if (spawn('apples', 3, { kind: 'gold', expires: G.clock + GOLD_MS })) toast('Goldapfel – schnell, er verschwindet!');
   }
 
   function refreshPoison(score) {
@@ -848,7 +848,7 @@
     s.grew = false;
     burst(tail.x, tail.y, ['#c8a27a', '#e9d5b5', '#a1887f'], 0, now, 7);
     Sound.shrink();
-    toast('🍗 Hunger! Du schrumpfst.');
+    toast('Hunger! Du schrumpfst.');
   }
 
   function zoneRing(r) {
@@ -874,7 +874,7 @@
     z.next = g.cols - 2 * z.ring <= 6 || g.rows - 2 * z.ring <= 6 ? Infinity : ZONE_MS;
     z.warned = 0;
     Sound.zone();
-    toast(z.next === Infinity ? '🔥 Die Zone ist jetzt am kleinsten!' : '🔥 Die Feuerwand rückt näher!');
+    toast(z.next === Infinity ? 'Die Zone ist jetzt am kleinsten!' : 'Die Feuerwand rückt näher!');
     if (victim) { kill(victim, victim.dir, now); endGame('zone'); }
   }
 
@@ -882,7 +882,7 @@
     const g = G, c = g.chaos;
     if (c.fx) {
       c.left -= dt;
-      if (c.left <= 0) { endChaosFx(); c.next = 6000 + rand(4000); toast('✨ Alles wieder normal'); }
+      if (c.left <= 0) { endChaosFx(); c.next = 6000 + rand(4000); toast('Alles wieder normal'); }
       return;
     }
     c.next -= dt;
@@ -890,7 +890,7 @@
     const pool = CHAOS.filter((e) => e.id !== c.last), e = pool[rand(pool.length)];
     c.last = e.id;
     Sound.chaos();
-    toast(e.icon + ' ' + e.name);
+    toast(e.name);
     if (e.id === 'rain') { for (let i = 0; i < 6; i++) spawn('apples', 2, { extra: true }); c.next = 8000; return; }
     if (e.id === 'grow') { g.snakes[0].pending += 4; c.next = 8000; return; }
     c.fx = e;
@@ -935,7 +935,7 @@
       s.picked = true;
       burst(h.x, h.y, ['#ffd54f', '#ffb300', '#ffffff'], g.interval * 0.4, now, 16);
       Sound.key();
-      toast('🔑 Schlüssel! Die Schlösser sind offen.');
+      toast('Schlüssel! Die Schlösser sind offen.');
     }
     const cp = g.checkpoints.find(at);
     if (cp && !cp.on) {
@@ -944,7 +944,7 @@
       g.cp = { x: cp.x, y: cp.y, d: h.d };
       s.picked = true;
       Sound.check();
-      toast('🚩 Checkpoint!');
+      toast('Checkpoint!');
     }
     if (g.goal && at(g.goal)) finishParkour(now);
   }
@@ -972,7 +972,7 @@
     g.respawnAt = now + 1100;
     g.shake = 380;
     Sound.crash();
-    toast(g.cp ? '💥 Autsch! Weiter am Checkpoint' : '💥 Autsch! Nochmal von vorn');
+    toast(g.cp ? 'Autsch! Weiter am Checkpoint' : 'Autsch! Nochmal von vorn');
     updateHud();
   }
 
@@ -1728,7 +1728,7 @@
   function snakeLook(s) {
     const own = s.p1 || s.twin;
     const base = s.p1 ? COLORS[settings.color].hex : s.twin ? mix(COLORS[settings.color].hex, '#ffffff', 0.35) : s.color;
-    return { base, pattern: own ? settings.pattern : 'plain', hat: own ? settings.hat : 'none' };
+    return { base, pattern: own ? settings.pattern : 'plain' };
   }
 
   function drawSnake(s, t, now) {
@@ -1754,13 +1754,17 @@
     ctx.lineJoin = 'round';
     strokePieces(pieces, 'rgba(0,0,0,0.17)', lw, c * 0.04, c * 0.09);                // Schatten
     if (!dead && (look.pattern === 'stripes' || look.pattern === 'rainbow')) {
+      strokePieces(pieces, look.pattern === 'rainbow' ? rainbow(0) : col, lw);   // durchgehender Körper
+      ctx.lineCap = 'butt';                                                     // Musterstücke mit geraden Enden
       const n = Math.ceil(geo.end - geo.start - 1e-6);
       for (let a = n - 1; a >= 0; a--) {                                                 // vom Schwanz zum Kopf
         const u0 = geo.start + a, sc = look.pattern === 'rainbow' ? rainbow(a) : a % 2 ? mix(col, '#000000', 0.25) : col;
         const part = rangePieces(geo, u0, Math.min(geo.end, u0 + 1));
         if (a === 0 && s.swing && part.length) part[0][0] = pieces[0][0];
+        ctx.lineCap = a === n - 1 ? 'round' : 'butt';                              // Schwanzende rund in eigener Farbe
         strokePieces(part, sc, lw);
       }
+      ctx.lineCap = 'round';
     } else {
       strokePieces(pieces, col, lw);
     }
@@ -1776,7 +1780,7 @@
     }
     strokePieces(pieces, 'rgba(255,255,255,0.2)', lw * 0.3, -lw * 0.13, -lw * 0.15);   // Glanz
     const headCol = !dead && look.pattern === 'rainbow' ? rainbow(0) : col;
-    drawHead(s, pieces[0][0], headCol, t, now, dead ? 'none' : look.hat);
+    drawHead(s, pieces[0][0], headCol, t, now);
   }
 
   function lookDir(s) {
@@ -1802,7 +1806,7 @@
     return g.apples.some((a) => a.x === x && a.y === y) ? clamp(t * 1.4, 0, 1) : 0;
   }
 
-  function drawHead(s, p, col, t, now, hat) {
+  function drawHead(s, p, col, t, now) {
     const c = cell, d = s.body[0].d;
     const cx = (p.x + 0.5) * c, cy = (p.y + 0.5) * c, r = c * 0.43;
     ctx.fillStyle = col;
@@ -1820,8 +1824,7 @@
       ctx.closePath();
       ctx.fill();
     }
-    if (hat === 'shades' && !dead) drawShades(cx, cy, d, c);
-    else drawEyes(s, cx, cy, d, c, col, dead, now);
+    drawEyes(s, cx, cy, d, c, col, dead, now);
     if (s.ai) {
       const blink = Math.floor(now / 400) % 2;
       ctx.strokeStyle = '#37474f';
@@ -1835,8 +1838,6 @@
       ctx.arc(cx + r * 0.15, cy - r * 1.3, c * 0.08, 0, Math.PI * 2);
       ctx.fill();
     }
-    if (hat === 'crown') drawCrown(cx - d.x * r * 0.2, cy - d.y * r * 0.2 - r * 0.72, r);
-    if (hat === 'bow') drawBow(cx, cy, d, r);
   }
 
   function drawEyes(s, cx, cy, d, c, col, dead, now) {
@@ -1879,68 +1880,6 @@
       ctx.arc(qx - pr * 0.35, qy - pr * 0.35, pr * 0.35, 0, Math.PI * 2);
       ctx.fill();
     }
-  }
-
-  function drawShades(cx, cy, d, c) {
-    ctx.save();
-    ctx.translate(cx, cy);
-    ctx.rotate(Math.atan2(d.y, d.x));
-    ctx.fillStyle = '#16181d';
-    for (const sd of [-1, 1]) { rrect(ctx, -c * 0.05, sd * c * 0.2 - c * 0.13, c * 0.23, c * 0.26, c * 0.08); ctx.fill(); }
-    ctx.fillRect(c * 0.02, -c * 0.09, c * 0.06, c * 0.18);
-    ctx.fillStyle = 'rgba(255,255,255,0.75)';
-    for (const sd of [-1, 1]) ctx.fillRect(c * 0.1, sd * c * 0.2 - c * 0.09, c * 0.04, c * 0.07);
-    ctx.restore();
-  }
-
-  function drawCrown(hx, hy, r) {
-    const w = r * 1.05, h = r * 0.62, x0 = hx - w / 2, y0 = hy - h / 2;
-    const gr = ctx.createLinearGradient(x0, y0, x0, y0 + h);
-    gr.addColorStop(0, '#fff176');
-    gr.addColorStop(1, '#f9a825');
-    ctx.fillStyle = gr;
-    ctx.beginPath();
-    ctx.moveTo(x0, y0 + h);
-    ctx.lineTo(x0, y0 + h * 0.25);
-    ctx.lineTo(x0 + w * 0.25, y0 + h * 0.62);
-    ctx.lineTo(x0 + w * 0.5, y0);
-    ctx.lineTo(x0 + w * 0.75, y0 + h * 0.62);
-    ctx.lineTo(x0 + w, y0 + h * 0.25);
-    ctx.lineTo(x0 + w, y0 + h);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = '#c17900';
-    ctx.lineWidth = Math.max(1, r * 0.08);
-    ctx.lineJoin = 'round';
-    ctx.stroke();
-    ctx.fillStyle = '#e53935';
-    ctx.beginPath();
-    ctx.arc(hx, y0 + h * 0.75, r * 0.11, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  function drawBow(cx, cy, d, r) {
-    ctx.save();
-    ctx.translate(cx, cy);
-    ctx.rotate(Math.atan2(d.y, d.x));
-    ctx.translate(-r * 0.25, -r * 0.82);
-    ctx.fillStyle = '#ff5fa2';
-    ctx.strokeStyle = '#c2185b';
-    ctx.lineWidth = Math.max(1, r * 0.07);
-    for (const sd of [-1, 1]) {
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(sd * r * 0.55, -r * 0.32);
-      ctx.lineTo(sd * r * 0.55, r * 0.32);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-    }
-    ctx.fillStyle = '#c2185b';
-    ctx.beginPath();
-    ctx.arc(0, 0, r * 0.14, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
   }
 
   function drawFx(now) {
@@ -2080,7 +2019,7 @@
       if (s !== L.z) { L.z = s; el.zone.textContent = s; el.sZone.classList.toggle('warn', s !== '–' && +s <= 3); }
     }
     if (g.chaos) {
-      const fx = g.chaos.fx, txt = fx ? fx.icon + ' ' + Math.max(0, Math.ceil(g.chaos.left / 1000)) + ' s' : '';
+      const fx = g.chaos.fx, txt = fx ? fx.name.replace(/!$/, '') + ' · ' + Math.max(0, Math.ceil(g.chaos.left / 1000)) + ' s' : '';
       if (txt !== L.fx) { L.fx = txt; el.sFx.textContent = txt; show(el.sFx, !!fx); }
     }
   }
@@ -2114,7 +2053,7 @@
     } else {
       el.sTime.title = 'Restzeit';
     }
-    el.modeLabel.textContent = park ? `${TIERS[g.level.tier].name} · ${g.level.name}` : m.icon + ' ' + m.name;
+    el.modeLabel.textContent = park ? `${TIERS[g.level.tier].name} · ${g.level.name}` : m.name;
     updateTime();
     const paused = g.state === 'pause';
     el.btnPause.innerHTML = paused ? ICON.play : ICON.pause;
@@ -2130,11 +2069,11 @@
     const g = G, m = g.mode;
     let title, desc, ctrl = controlsHint();
     if (g.level) {
-      title = `🏁 ${g.level.name}`;
-      desc = again ? 'Weiter geht’s – drück eine Richtung!' : `${TIERS[g.level.tier].name} · Lenk dich bis zur Zielflagge und sammle ⭐`;
+      title = g.level.name;
+      desc = again ? 'Weiter geht’s – drück eine Richtung!' : `${TIERS[g.level.tier].name} · Lenk dich bis zur Zielflagge und sammle alle Sterne`;
       if (again && !isTouch) ctrl = 'Pfeiltasten oder WASD';
     } else {
-      title = `${m.icon} ${m.name}`;
+      title = m.name;
       desc = m.desc;
       if (m.ai) desc += ` (KI: ${AI_LEVELS[settings.ai].name})`;
       if (m.duo) {
@@ -2157,7 +2096,7 @@
   }
 
   function showPause() {
-    const g = G, title = g.level ? `🏁 ${g.level.name}` : `${g.mode.icon} ${g.mode.name}`;
+    const g = G, title = g.level ? g.level.name : g.mode.name;
     showOverlay(`<h2>Pause</h2><div class="sub">${title}</div>
       <div class="btns">
         <button class="btn primary" type="button" data-act="resume">▶ Weiter</button>
@@ -2175,7 +2114,7 @@
       let w = a.alive && !b.alive ? a : b.alive && !a.alive ? b : null;
       if (!w && g.result === 'win' && a.score !== b.score) w = a.score > b.score ? a : b;
       const ca = snakeLook(a).base, cb = b.color, tally = wins[m.id];
-      const title = !w ? 'Unentschieden!' : m.ai ? (w === a ? 'Du gewinnst! 🎉' : 'Die KI gewinnt!')
+      const title = !w ? 'Unentschieden!' : m.ai ? (w === a ? 'Du gewinnst!' : 'Die KI gewinnt!')
         : `<i class="dot" style="background:${w === a ? ca : cb}"></i> ${w.name} gewinnt!`;
       html = `<h2>${title}</h2>
         <div class="scores">
@@ -2184,7 +2123,7 @@
         </div>
         <div class="sub" style="margin-top:10px">Siege: ${a.name} ${tally[0]} : ${tally[1]} ${b.name}</div>`;
     } else {
-      const title = { win: 'Gewonnen! 🎉', time: 'Zeit um!', poison: 'Vergiftet!', zone: 'Verbrannt!', hunger: 'Verhungert!', saw: 'Zersägt!' }[g.result] || 'Game Over';
+      const title = { win: 'Gewonnen!', time: 'Zeit um!', poison: 'Vergiftet!', zone: 'Verbrannt!', hunger: 'Verhungert!', saw: 'Zersägt!' }[g.result] || 'Game Over';
       const total = scoreOf(), record = total > g.prevBest && total > 0;
       html = `<h2>${title}</h2>
         <div class="scores"><div>${ICON.apple}${total}</div><div>${ICON.trophy}${g.best}</div></div>
@@ -2206,9 +2145,9 @@
     if (g.record) note = '<div class="badge">Neue Bestzeit!</div>';
     else if (g.oldBest === null) note = '<div class="badge">Level geschafft!</div>';
     else if (best) note = `<div class="sub" style="margin-top:6px">Bestzeit: ${fmtTime(best.t)} s</div>`;
-    showOverlay(`<h2>🏁 Geschafft!</h2><div class="sub">${TIERS[lv.tier].name} · ${lv.name}</div>
+    showOverlay(`<h2>Geschafft!</h2><div class="sub">${TIERS[lv.tier].name} · ${lv.name}</div>
       <div class="bigstars">${stars}</div>
-      <div class="scores"><div>⏱ ${fmtTime(g.elapsed)} s</div><div>💥 ${g.deaths}</div></div>
+      <div class="scores"><div>${fmtTime(g.elapsed)} s</div><div>${g.deaths} ${g.deaths === 1 ? 'Crash' : 'Crashs'}</div></div>
       ${note}
       <div class="btns">
         ${next ? '<button class="btn primary" type="button" data-act="next">▶ Nächstes Level</button>' : ''}
@@ -2257,8 +2196,8 @@
         <span class="mi">${m.icon}</span><span class="mn">${m.name}</span><span class="mb"></span>${m.fresh ? '<span class="new">NEU</span>' : ''}</button>`).join('');
     el.tiers.innerHTML = TIERS.map((t, i) => `<button type="button" data-tier="${i}"><i class="td" style="background:${t.color}"></i>${t.name} <small></small></button>`).join('');
     el.themes.innerHTML = Object.entries(THEMES).map(([k, t]) =>
-      `<button type="button" data-theme="${k}"><i class="tw" style="background:linear-gradient(135deg, ${t.grass[0]} 50%, ${t.frame} 50%)"></i>${t.icon} ${t.name}</button>`).join('');
-    el.maps.innerHTML = Object.entries(MAPS).map(([k, mp]) => `<button type="button" data-map="${k}">${mp.icon} ${mp.name}</button>`).join('');
+      `<button type="button" data-theme="${k}"><i class="tw" style="background:linear-gradient(135deg, ${t.grass[0]} 50%, ${t.frame} 50%)"></i>${t.name}</button>`).join('');
+    el.maps.innerHTML = Object.entries(MAPS).map(([k, mp]) => `<button type="button" data-map="${k}">${mp.name}</button>`).join('');
     el.swatches.innerHTML = Object.entries(COLORS).map(([k, c]) =>
       `<button type="button" class="sw" data-color="${k}" style="background:${c.hex}" title="${c.name}" aria-label="${c.name}"></button>`).join('');
   }
@@ -2273,7 +2212,7 @@
       return `<button type="button" class="lvl${r ? ' done' : ''}${i === settings.level ? ' on' : ''}" data-level="${i}">
           <span class="ln" style="background:${TIERS[lv.tier].color}">${num}</span>
           <span class="lt">${lv.name}</span><span class="ls">${stars}</span>
-          <span class="lb">${r ? '⏱ ' + fmtTime(r.t) + ' s' : 'noch offen'}</span></button>`;
+          <span class="lb">${r ? fmtTime(r.t) + ' s' : 'noch offen'}</span></button>`;
     }).join('');
   }
 
@@ -2282,12 +2221,12 @@
     el.modes.querySelectorAll('.mode').forEach((b) => {
       const m = MODES.find((x) => x.id === b.dataset.mode);
       b.classList.toggle('on', m.id === settings.mode);
-      b.querySelector('.mb').textContent = m.duo ? 'Tastatur' : m.ai ? 'vs. Computer' : '🏆 ' + store.get('best.' + m.id, 0);
+      b.querySelector('.mb').textContent = m.duo ? 'Tastatur' : m.ai ? 'vs. Computer' : 'Rekord ' + store.get('best.' + m.id, 0);
     });
     const mode = MODES.find((m) => m.id === settings.mode);
     el.modeDesc.textContent = mode.desc;
     const th = THEMES[settings.theme], mp = MAPS[settings.map];
-    el.summary.innerHTML = `${th.icon} <b>${th.name}</b> · ${mp.icon} <b>${mp.name}</b> · Feld <b>${SIZE_NAMES[settings.size]}</b> · Tempo <b>${SPEED_NAMES[settings.speed]}</b> · ⚙️ ändern`;
+    el.summary.innerHTML = `Welt <b>${th.name}</b> · Karte <b>${mp.name}</b> · Feld <b>${SIZE_NAMES[settings.size]}</b> · Tempo <b>${SPEED_NAMES[settings.speed]}</b> · ändern`;
     document.querySelectorAll('.seg[data-setting]').forEach((seg) => {
       seg.querySelectorAll('button').forEach((b) => b.classList.toggle('on', String(settings[seg.dataset.setting]) === b.dataset.v));
     });
