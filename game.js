@@ -2453,6 +2453,7 @@
   function resetControls() {
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
     window.focus();
+    el.app.focus({ preventScroll: true });
     swipe = null;
     if (G) G.snakes.forEach((s) => { s.queue.length = 0; });
     if (G && G.fx.invert) { delete G.fx.invert; if (G.chaos) G.chaos.fx = null; }
@@ -2466,7 +2467,15 @@
     const b = e.target.closest && e.target.closest('button');
     if (b) b.blur();
   });
-  document.addEventListener('pointerdown', () => Sound.init());
+  // Tastatur-Fokus nach jedem Tippen/Klicken zurück aufs Spiel (wichtig für Homebildschirm-Apps auf dem iPad)
+  el.app.tabIndex = -1;
+  document.addEventListener('pointerdown', (e) => {
+    Sound.init();
+    if (el.menu.classList.contains('hidden') && !e.target.closest('button')) el.app.focus({ preventScroll: true });
+  });
+  document.addEventListener('pointerup', () => {
+    if (el.menu.classList.contains('hidden') && (!document.activeElement || document.activeElement === document.body)) el.app.focus({ preventScroll: true });
+  });
   document.addEventListener('visibilitychange', () => { if (document.hidden && G && G.state === 'play') pause(); });
   window.addEventListener('resize', layout);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(layout);

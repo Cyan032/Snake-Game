@@ -247,3 +247,4 @@ body.touch #dpad {
 .reset.keys { grid-column: 1 / -1; background: #e8eefc; color: #2b51c4; }
 .reset.keys:hover { background: #dbe4fb; }
 .reset.ok { background: #e3f4e1; color: #2e7d32; }
+#app:focus { outline: none; }
