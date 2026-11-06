@@ -239,3 +239,8 @@ body.touch #dpad {
 .stat .sym { font-size: 20px; min-width: 0; opacity: .9; }
 .stat .sym.star { color: #ffd54f; opacity: 1; }
 .stat .lbl { font-size: 13px; font-weight: 600; opacity: .8; min-width: 0; }
+.resets { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.reset { border: 0; border-radius: 12px; padding: 10px 8px; background: var(--soft); color: var(--ink); font-size: 14px; font-weight: 600; cursor: pointer; }
+.reset:hover { background: var(--soft-2); }
+.reset.danger { background: #fdecea; color: #c62828; }
+.reset.danger:hover { background: #fbd9d5; }

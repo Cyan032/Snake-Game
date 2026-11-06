@@ -2426,6 +2426,19 @@
     saveSettings();
     syncMenu();
   });
+  document.querySelectorAll('[data-reset]').forEach((b) => b.addEventListener('click', () => {
+    const what = b.dataset.reset;
+    const ask = { settings: 'Alle Einstellungen auf Standard zurücksetzen?', best: 'Alle Rekorde löschen?',
+      park: 'Alle Parkour-Sterne und Bestzeiten löschen?', all: 'Wirklich alles zurücksetzen (Einstellungen, Rekorde und Parkour)?' }[what];
+    if (!confirm(ask)) return;
+    const keep = settings.tab;
+    if (what === 'settings' || what === 'all') { Object.assign(settings, DEFAULTS, { tab: keep }); saveSettings(); }
+    if (what === 'best' || what === 'all') MODES.forEach((m) => { try { localStorage.removeItem('snake.best.' + m.id); } catch (e) {} });
+    if (what === 'park' || what === 'all') { try { localStorage.removeItem('snake.park'); } catch (e) {} }
+    if (G) { G.ambient = makeAmbient(settings.theme, G.cols, G.rows); G.best = G.prevBest = store.get('best.' + G.mode.id, 0); applyTheme(); renderBackground(); updateHud(); }
+    syncMenu();
+    toast('Zurückgesetzt');
+  }));
   el.play.addEventListener('click', startFromMenu);
   el.close.addEventListener('click', closeMenu);
 

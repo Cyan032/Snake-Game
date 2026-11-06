@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=3">
+<link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
 <main id="app">
@@ -131,6 +131,13 @@
           <button type="button" data-v="plain">Uni</button><button type="button" data-v="stripes">Streifen</button><button type="button" data-v="dots">Punkte</button><button type="button" data-v="rainbow">Regenbogen</button>
         </div>
       </div>
+      <div class="group">Zurücksetzen</div>
+      <div class="resets">
+        <button type="button" class="reset" data-reset="settings">Einstellungen zurücksetzen</button>
+        <button type="button" class="reset" data-reset="best">Rekorde löschen</button>
+        <button type="button" class="reset" data-reset="park">Parkour-Fortschritt löschen</button>
+        <button type="button" class="reset danger" data-reset="all">Alles zurücksetzen</button>
+      </div>
     </section>
 
     <button class="play" id="play" type="button">▶ Spielen</button>
@@ -138,7 +145,7 @@
   </div>
 </div>
 
-<script src="levels.js?v=3"></script>
-<script src="game.js?v=3"></script>
+<script src="levels.js?v=4"></script>
+<script src="game.js?v=4"></script>
 </body>
 </html>
