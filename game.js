@@ -118,6 +118,9 @@
     w: 'KeyW', a: 'KeyA', s: 'KeyS', d: 'KeyD', p: 'KeyP', m: 'KeyM', r: 'KeyR',
     ' ': 'Space', Enter: 'Enter', Escape: 'Escape', UIKeyInputEscape: 'Escape',
   };
+  // alte Tastennummern (keyCode), falls weder Code noch Name kommen
+  const KEY_NUMS = { 37: 'ArrowLeft', 38: 'ArrowUp', 39: 'ArrowRight', 40: 'ArrowDown', 87: 'KeyW', 65: 'KeyA', 83: 'KeyS', 68: 'KeyD',
+    32: 'Space', 13: 'Enter', 27: 'Escape', 80: 'KeyP', 77: 'KeyM', 82: 'KeyR' };
   const KEYS = {
     KeyW: [0, 'up'], KeyS: [0, 'down'], KeyA: [0, 'left'], KeyD: [0, 'right'],
     ArrowUp: [1, 'up'], ArrowDown: [1, 'down'], ArrowLeft: [1, 'left'], ArrowRight: [1, 'right'],
@@ -131,13 +134,13 @@
 
   const DEFAULTS = {
     mode: 'classic', speed: 'normal', size: 'm', apples: 1, bonus: 'on', theme: 'meadow', map: 'open', ai: 'normal',
-    color: 'blue', pattern: 'plain', tier: 0, level: 0, tab: 'modes',
+    color: 'blue', pattern: 'plain', keydebug: false, tier: 0, level: 0, tab: 'modes',
   };
   const settings = Object.assign({}, DEFAULTS, store.get('settings', {}));
   const VALID = {
     mode: MODES.map((m) => m.id), speed: Object.keys(SPEEDS), size: Object.keys(SIZES), apples: APPLE_COUNTS, bonus: ['on', 'off'],
     theme: Object.keys(THEMES), map: Object.keys(MAPS), ai: Object.keys(AI_LEVELS), color: Object.keys(COLORS),
-    pattern: ['plain', 'stripes', 'dots', 'rainbow'], tier: [0, 1, 2, 3], tab: ['modes', 'parkour', 'settings'],
+    pattern: ['plain', 'stripes', 'dots', 'rainbow'], keydebug: [true, false], tier: [0, 1, 2, 3], tab: ['modes', 'parkour', 'settings'],
   };
   for (const k in VALID) if (!VALID[k].includes(settings[k])) settings[k] = DEFAULTS[k];
   if (!(settings.level >= 0 && settings.level < LEVELS.length)) settings.level = 0;
@@ -208,6 +211,7 @@
     menu: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 7h15M4.5 12h15M4.5 17h15" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" fill="none"/></svg>',
   };
 
+  let lastKeydown = 0;
   let G = null;            // aktuelles Spiel
   let started = false;     // schon einmal aus dem Menü gestartet?
   let cell = 20, boardW = 0, boardH = 0, dpr = 1, toastTimer = 0;
@@ -2296,7 +2300,9 @@
   window.addEventListener('keydown', (e) => {
     Sound.init();
     if (e.ctrlKey || e.metaKey || e.altKey) return;
-    const code = e.code || KEY_NAMES[e.key] || KEY_NAMES[(e.key || '').toLowerCase()] || '';
+    const code = (KEYS[e.code] || ['Space', 'Enter', 'NumpadEnter', 'Escape', 'KeyP', 'KeyM', 'KeyR'].includes(e.code) ? e.code : '')
+      || KEY_NAMES[e.key] || KEY_NAMES[(e.key || '').toLowerCase()] || KEY_NUMS[e.keyCode || e.which] || '';
+    if (code) lastKeydown = performance.now();
     const g = G;
     if (!el.menu.classList.contains('hidden')) {
       if (code === 'Enter' || code === 'NumpadEnter' || code === 'Space') { e.preventDefault(); startFromMenu(); }
@@ -2410,7 +2416,7 @@
     const b = e.target.closest('button');
     if (!b) return;
     const k = seg.dataset.setting;
-    settings[k] = k === 'apples' ? Number(b.dataset.v) : b.dataset.v;
+    settings[k] = k === 'apples' ? Number(b.dataset.v) : k === 'keydebug' ? b.dataset.v === 'true' : b.dataset.v;
     saveSettings();
     syncMenu();
   }));
@@ -2483,7 +2489,6 @@
   const grabKeys = () => { try { keytrap.focus({ preventScroll: true }); } catch (e) { keytrap.focus(); } };
   // Ausweichweg: Manche Geräte liefern Buchstaben nur als Texteingabe statt als Tastendruck
   const TEXT_DIRS = { w: 'up', a: 'left', s: 'down', d: 'right' };
-  let lastKeydown = 0;
   keytrap.addEventListener('input', (e) => {
     const ch = (e.data || keytrap.value || '').slice(-1).toLowerCase();
     keytrap.value = '';
@@ -2494,8 +2499,9 @@
   function showKeyTest(what) {
     const a = document.activeElement, f = a === keytrap ? 'Auffangfeld' : a === document.body ? 'Seite' : (a && (a.id || a.tagName)) || '–';
     $('#keytest').textContent = `Zuletzt: ${what} · Fokus: ${f} · Fenster aktiv: ${document.hasFocus() ? 'ja' : 'nein'}`;
+    if (settings.keydebug) { el.toast.textContent = what + ' · Spiel: ' + (G ? G.state : '–'); el.toast.classList.remove('hidden'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.toast.classList.add('hidden'), 2500); }
   }
-  window.addEventListener('keydown', (e) => { lastKeydown = performance.now(); showKeyTest(`Taste ${e.key} (${e.code || 'ohne Code'})`); }, true);
+  window.addEventListener('keydown', (e) => showKeyTest(`Taste ${e.key} · Code ${e.code || '–'} · Nr. ${e.keyCode}`), true);
   document.addEventListener('pointerdown', (e) => {
     Sound.init();
     if (el.menu.classList.contains('hidden') && !e.target.closest('button')) grabKeys();
