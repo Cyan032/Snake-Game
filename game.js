@@ -2264,12 +2264,14 @@
   }
   function closeMenu() {
     el.menu.classList.add('hidden');
+    grabKeys();
     if (G.state === 'pause') showPause();
     else if (G.state === 'over') { if (G.result === 'goal') showLevelDone(); else showGameOver(); }
     updateHud();
   }
   function startFromMenu() {
     started = true;
+    grabKeys();
     saveSettings();
     el.menu.classList.add('hidden');
     if (settings.tab === 'parkour') newParkour(settings.level);
@@ -2453,7 +2455,7 @@
   function resetControls() {
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
     window.focus();
-    el.app.focus({ preventScroll: true });
+    grabKeys();
     swipe = null;
     if (G) G.snakes.forEach((s) => { s.queue.length = 0; });
     if (G && G.fx.invert) { delete G.fx.invert; if (G.chaos) G.chaos.fx = null; }
@@ -2467,14 +2469,20 @@
     const b = e.target.closest && e.target.closest('button');
     if (b) b.blur();
   });
-  // Tastatur-Fokus nach jedem Tippen/Klicken zurück aufs Spiel (wichtig für Homebildschirm-Apps auf dem iPad)
-  el.app.tabIndex = -1;
+  // Tastatur-Fokus nach jedem Tippen/Klicken zurück aufs Spiel. Safari leitet in Homebildschirm-Apps
+  // Tasten einer angeschlossenen Tastatur nur an ein Eingabefeld weiter – dafür gibt es ein unsichtbares.
+  const keytrap = $('#keytrap');
+  const grabKeys = () => { try { keytrap.focus({ preventScroll: true }); } catch (e) { keytrap.focus(); } };
+  keytrap.addEventListener('input', () => { keytrap.value = ''; });
   document.addEventListener('pointerdown', (e) => {
     Sound.init();
-    if (el.menu.classList.contains('hidden') && !e.target.closest('button')) el.app.focus({ preventScroll: true });
+    if (el.menu.classList.contains('hidden') && !e.target.closest('button')) grabKeys();
+  });
+  document.addEventListener('click', (e) => {
+    if (el.menu.classList.contains('hidden') && !e.target.closest('#overlay button')) grabKeys();
   });
   document.addEventListener('pointerup', () => {
-    if (el.menu.classList.contains('hidden') && (!document.activeElement || document.activeElement === document.body)) el.app.focus({ preventScroll: true });
+    if (el.menu.classList.contains('hidden') && document.activeElement !== keytrap) grabKeys();
   });
   document.addEventListener('visibilitychange', () => { if (document.hidden && G && G.state === 'play') pause(); });
   window.addEventListener('resize', layout);
