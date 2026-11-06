@@ -111,6 +111,13 @@
   const DIRS = { up: { x: 0, y: -1 }, down: { x: 0, y: 1 }, left: { x: -1, y: 0 }, right: { x: 1, y: 0 } };
   const DIR_LIST = [DIRS.up, DIRS.right, DIRS.down, DIRS.left];
   // [Spieler im 2-Spieler-Modus, Richtung]
+  // Tastenname -> Code, falls ein Gerät keinen Code mitschickt
+  const KEY_NAMES = {
+    ArrowUp: 'ArrowUp', ArrowDown: 'ArrowDown', ArrowLeft: 'ArrowLeft', ArrowRight: 'ArrowRight',
+    UIKeyInputUpArrow: 'ArrowUp', UIKeyInputDownArrow: 'ArrowDown', UIKeyInputLeftArrow: 'ArrowLeft', UIKeyInputRightArrow: 'ArrowRight',
+    w: 'KeyW', a: 'KeyA', s: 'KeyS', d: 'KeyD', p: 'KeyP', m: 'KeyM', r: 'KeyR',
+    ' ': 'Space', Enter: 'Enter', Escape: 'Escape', UIKeyInputEscape: 'Escape',
+  };
   const KEYS = {
     KeyW: [0, 'up'], KeyS: [0, 'down'], KeyA: [0, 'left'], KeyD: [0, 'right'],
     ArrowUp: [1, 'up'], ArrowDown: [1, 'down'], ArrowLeft: [1, 'left'], ArrowRight: [1, 'right'],
@@ -2289,23 +2296,24 @@
   window.addEventListener('keydown', (e) => {
     Sound.init();
     if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const code = e.code || KEY_NAMES[e.key] || KEY_NAMES[(e.key || '').toLowerCase()] || '';
     const g = G;
     if (!el.menu.classList.contains('hidden')) {
-      if (e.code === 'Enter' || e.code === 'NumpadEnter' || e.code === 'Space') { e.preventDefault(); startFromMenu(); }
-      else if (e.code === 'Escape' && started) { e.preventDefault(); closeMenu(); }
+      if (code === 'Enter' || code === 'NumpadEnter' || code === 'Space') { e.preventDefault(); startFromMenu(); }
+      else if (code === 'Escape' && started) { e.preventDefault(); closeMenu(); }
       return;
     }
-    const k = KEYS[e.code];
+    const k = KEYS[code];
     if (k) {
       e.preventDefault();
       input(g.mode.duo ? k[0] : 0, DIRS[k[1]]);
       return;
     }
-    switch (e.code) {
+    switch (code) {
       case 'Space': case 'Enter': case 'NumpadEnter':
         e.preventDefault();
         if (g.state === 'ready') begin();
-        else if (g.state === 'play') { if (e.code === 'Space') pause(); }
+        else if (g.state === 'play') { if (code === 'Space') pause(); }
         else if (g.state === 'pause') resume();
         else if (g.state === 'over' && performance.now() - g.overAt > 600) { if (g.result === 'goal') nextLevel(); else restart(); }
         break;
@@ -2316,7 +2324,7 @@
         e.preventDefault();
         if (g.state === 'play') pause();
         else if (g.state === 'pause') resume();
-        else if (g.state === 'over' && e.code === 'Escape') openMenu(g.level ? 'parkour' : null);
+        else if (g.state === 'over' && code === 'Escape') openMenu(g.level ? 'parkour' : null);
         break;
       case 'KeyM':
         toggleSound();
@@ -2473,7 +2481,21 @@
   // Tasten einer angeschlossenen Tastatur nur an ein Eingabefeld weiter – dafür gibt es ein unsichtbares.
   const keytrap = $('#keytrap');
   const grabKeys = () => { try { keytrap.focus({ preventScroll: true }); } catch (e) { keytrap.focus(); } };
-  keytrap.addEventListener('input', () => { keytrap.value = ''; });
+  // Ausweichweg: Manche Geräte liefern Buchstaben nur als Texteingabe statt als Tastendruck
+  const TEXT_DIRS = { w: 'up', a: 'left', s: 'down', d: 'right' };
+  let lastKeydown = 0;
+  keytrap.addEventListener('input', (e) => {
+    const ch = (e.data || keytrap.value || '').slice(-1).toLowerCase();
+    keytrap.value = '';
+    showKeyTest('Texteingabe „' + ch + '“');
+    if (performance.now() - lastKeydown < 80 || !TEXT_DIRS[ch] || !G) return;
+    if (el.menu.classList.contains('hidden')) input(0, DIRS[TEXT_DIRS[ch]]);
+  });
+  function showKeyTest(what) {
+    const a = document.activeElement, f = a === keytrap ? 'Auffangfeld' : a === document.body ? 'Seite' : (a && (a.id || a.tagName)) || '–';
+    $('#keytest').textContent = `Zuletzt: ${what} · Fokus: ${f} · Fenster aktiv: ${document.hasFocus() ? 'ja' : 'nein'}`;
+  }
+  window.addEventListener('keydown', (e) => { lastKeydown = performance.now(); showKeyTest(`Taste ${e.key} (${e.code || 'ohne Code'})`); }, true);
   document.addEventListener('pointerdown', (e) => {
     Sound.init();
     if (el.menu.classList.contains('hidden') && !e.target.closest('button')) grabKeys();
