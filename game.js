@@ -2284,7 +2284,7 @@
   }
 
   /* ---------- Eingaben ---------- */
-  document.addEventListener('keydown', (e) => {
+  window.addEventListener('keydown', (e) => {
     Sound.init();
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     const g = G;
@@ -2320,7 +2320,7 @@
         toggleSound();
         break;
     }
-  });
+  }, true);
 
   // Wischen auf dem Spielbereich
   let swipe = null;
@@ -2428,6 +2428,7 @@
   });
   document.querySelectorAll('[data-reset]').forEach((b) => b.addEventListener('click', () => {
     const what = b.dataset.reset;
+    if (what === 'keys') { resetControls(); toast('Steuerung zurückgesetzt'); return; }
     const ask = { settings: 'Alle Einstellungen auf Standard zurücksetzen?', best: 'Alle Rekorde löschen?',
       park: 'Alle Parkour-Sterne und Bestzeiten löschen?', all: 'Wirklich alles zurücksetzen (Einstellungen, Rekorde und Parkour)?' }[what];
     if (!confirm(ask)) return;
@@ -2439,6 +2440,15 @@
     syncMenu();
     toast('Zurückgesetzt');
   }));
+  // Steuerung neu starten: Fokus zurück aufs Spiel, hängende Eingaben verwerfen
+  function resetControls() {
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    window.focus();
+    swipe = null;
+    if (G) G.snakes.forEach((s) => { s.queue.length = 0; });
+    if (G && G.fx.invert) { delete G.fx.invert; if (G.chaos) G.chaos.fx = null; }
+  }
+  window.addEventListener('focus', () => { swipe = null; });
   el.play.addEventListener('click', startFromMenu);
   el.close.addEventListener('click', closeMenu);
 
