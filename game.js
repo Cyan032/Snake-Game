@@ -2428,7 +2428,14 @@
   });
   document.querySelectorAll('[data-reset]').forEach((b) => b.addEventListener('click', () => {
     const what = b.dataset.reset;
-    if (what === 'keys') { resetControls(); toast('Steuerung zurückgesetzt'); return; }
+    if (what === 'keys') {
+      resetControls();
+      const old = b.textContent;
+      b.textContent = '✓ Steuerung zurückgesetzt';
+      b.classList.add('ok');
+      setTimeout(() => { b.textContent = old; b.classList.remove('ok'); if (started) closeMenu(); else startFromMenu(); }, 700);
+      return;
+    }
     const ask = { settings: 'Alle Einstellungen auf Standard zurücksetzen?', best: 'Alle Rekorde löschen?',
       park: 'Alle Parkour-Sterne und Bestzeiten löschen?', all: 'Wirklich alles zurücksetzen (Einstellungen, Rekorde und Parkour)?' }[what];
     if (!confirm(ask)) return;
@@ -2438,7 +2445,9 @@
     if (what === 'park' || what === 'all') { try { localStorage.removeItem('snake.park'); } catch (e) {} }
     if (G) { G.ambient = makeAmbient(settings.theme, G.cols, G.rows); G.best = G.prevBest = store.get('best.' + G.mode.id, 0); applyTheme(); renderBackground(); updateHud(); }
     syncMenu();
-    toast('Zurückgesetzt');
+    const old = b.textContent;
+    b.textContent = '✓ Erledigt';
+    setTimeout(() => { b.textContent = old; }, 1200);
   }));
   // Steuerung neu starten: Fokus zurück aufs Spiel, hängende Eingaben verwerfen
   function resetControls() {
