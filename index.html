@@ -82,6 +82,12 @@
     box-shadow: 0 0 14px var(--cyan); animation: rm 1.4s linear infinite; }
   @keyframes dj { 0%, 30%, 70%, 100% { transform: none; } 50% { transform: translateY(-50px); } }
   @keyframes rm { from { left: 105%; } to { left: -15%; } }
+  .blockprev { background: linear-gradient(#0d0520, #2a0d55); overflow: hidden; }
+  .blockprev::after { content: ''; position: absolute; left: 22%; right: 22%; top: auto; bottom: 0; height: 26px;
+    background: repeating-linear-gradient(90deg, var(--violet) 0 22px, transparent 22px 26px); opacity: .55; box-shadow: none; }
+  .blockprev i { position: absolute; top: -30px; width: 22px; height: 22px; border: 3px solid var(--c); border-radius: 6px;
+    box-shadow: 0 0 12px var(--c), 22px 0 0 -3px var(--c); animation: bf 2.4s linear infinite; }
+  @keyframes bf { 0% { transform: translateY(0); } 80%, 100% { transform: translateY(150px); opacity: 0; } }
   footer { position: relative; z-index: 1; text-align: center; margin-top: 40px; font-size: 13px; letter-spacing: 3px; color: #a99ad8; }
 
   @keyframes blink { 50% { opacity: .35; } }
@@ -122,6 +128,14 @@
       <div class="info">
         <h2>Dino Runner</h2>
         <p>Spring über Steine und Büsche und duck dich unter Bienen weg.</p>
+        <span class="play">SPIELEN</span>
+      </div>
+    </a>
+    <a class="game" href="/block/">
+      <div class="screen blockprev"><i style="left:30%;--c:var(--cyan)"></i><i style="left:46%;--c:var(--pink);animation-delay:-.8s"></i><i style="left:62%;--c:var(--violet);animation-delay:-1.6s"></i></div>
+      <div class="info">
+        <h2>Blockfall</h2>
+        <p>Steine drehen, Reihen füllen, Punkte sammeln – mit Vorschau und Halten.</p>
         <span class="play">SPIELEN</span>
       </div>
     </a>
