@@ -5,7 +5,7 @@ Eine Sammlung kleiner Browserspiele. Die Startseite (`index.html`) zeigt alle Sp
 | Spiel | Ordner |
 | --- | --- |
 | Snake | `snake/` |
-| Neon Flug | `flug/` |
+| Flappy Bird | `flug/` |
 
 Ein neues Spiel bekommt einen eigenen Ordner und eine Karte auf der Startseite.
 
