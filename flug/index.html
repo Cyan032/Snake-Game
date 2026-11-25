@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0d0520">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Neon Flug – Arcadia</title>
+<link href="https://fonts.googleapis.com/css2?family=Monoton&family=Fredoka:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; height: 100%; background: #0d0520; overflow: hidden; touch-action: manipulation;
+    font-family: 'Fredoka', system-ui, sans-serif; color: #fff; -webkit-user-select: none; user-select: none; }
+  canvas { display: block; width: 100vw; height: 100vh; }
+  .home { position: fixed; top: 14px; left: 14px; z-index: 2; color: #29f0ff; text-decoration: none; font-weight: 700;
+    letter-spacing: 2px; padding: 6px 12px; border: 2px solid rgba(41,240,255,.6); border-radius: 10px; background: rgba(13,5,32,.6); }
+</style>
+</head>
+<body>
+<a class="home" href="/">‹ Arcadia</a>
+<canvas id="c"></canvas>
+<script>
+(() => {
+  'use strict';
+  const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+  // Spielwelt in festen Einheiten: 400 hoch, Breite passt sich an
+  const H = 400, GRAV = 1500, FLAP = -430, SPEED = 150, GAP = 120, SPACING = 210, PW = 54, R = 13;
+  let W = 600, scale = 1, dpr = 1;
+  let state = 'start', bird, pillars, score, best = 0, t = 0, flash = 0, deadT = 0, stars = [];
+  try { best = +localStorage.getItem('flug.best') || 0; } catch (e) {}
+
+  function resize() {
+    dpr = Math.min(devicePixelRatio || 1, 2);
+    cv.width = innerWidth * dpr; cv.height = innerHeight * dpr;
+    scale = innerHeight / H; W = innerWidth / scale;
+    stars = Array.from({ length: 70 }, () => ({ x: Math.random() * W, y: Math.random() * H * 0.75, s: Math.random() * 1.5 + 0.5 }));
+  }
+  addEventListener('resize', resize); resize();
+
+  function reset() {
+    bird = { x: Math.min(W * 0.3, 160), y: H * 0.45, vy: 0 };
+    pillars = []; score = 0;
+    for (let i = 0; i < 6; i++) addPillar(W + 60 + i * SPACING);
+  }
+  function addPillar(x) {
+    const gap = Math.max(GAP - score * 0.6, 95);
+    pillars.push({ x, gap, y: 60 + Math.random() * (H - 120 - gap - 40), done: false });
+  }
+  reset();
+
+  // Ton
+  let ac;
+  function beep(f, d = 0.08, type = 'square', v = 0.05) {
+    try {
+      ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = type; o.frequency.value = f; g.gain.value = v;
+      g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + d);
+      o.connect(g).connect(ac.destination); o.start(); o.stop(ac.currentTime + d);
+    } catch (e) {}
+  }
+
+  function flap() {
+    if (state === 'start') { state = 'play'; }
+    else if (state === 'over') { if (deadT < 0.5) return; reset(); state = 'play'; }
+    if (state === 'play') { bird.vy = FLAP; beep(520, 0.07); }
+  }
+  addEventListener('pointerdown', (e) => { if (e.target.closest('a')) return; e.preventDefault(); flap(); }, { passive: false });
+  addEventListener('keydown', (e) => {
+    const k = e.code || e.key;
+    if (k === 'Space' || k === ' ' || k === 'ArrowUp' || k === 'KeyW' || k === 'w' || k === 'Enter' || e.keyCode === 32) {
+      e.preventDefault(); if (!e.repeat) flap();
+    }
+  }, true);
+
+  function die() {
+    state = 'over'; deadT = 0; flash = 1; beep(140, 0.35, 'sawtooth', 0.07);
+    if (score > best) { best = score; try { localStorage.setItem('flug.best', best); } catch (e) {} }
+  }
+
+  function update(dt) {
+    t += dt; flash = Math.max(0, flash - dt * 3);
+    if (state === 'start') { bird.y = H * 0.45 + Math.sin(t * 3) * 8; return; }
+    if (state === 'over') { deadT += dt; if (bird.y < H - 30 - R) { bird.vy += GRAV * dt; bird.y = Math.min(bird.y + bird.vy * dt, H - 30 - R); } return; }
+    bird.vy = Math.min(bird.vy + GRAV * dt, 700); bird.y += bird.vy * dt;
+    const sp = SPEED + Math.min(score * 2, 80);
+    for (const p of pillars) {
+      p.x -= sp * dt;
+      if (!p.done && p.x + PW < bird.x) { p.done = true; score++; beep(880, 0.09, 'triangle', 0.06); }
+      // Kollision Kreis gegen die beiden Säulen
+      if (bird.x + R > p.x && bird.x - R < p.x + PW) {
+        const cx = Math.max(p.x, Math.min(bird.x, p.x + PW));
+        for (const [top, bot] of [[-50, p.y], [p.y + p.gap, H]]) {
+          const cy = Math.max(top, Math.min(bird.y, bot));
+          if ((bird.x - cx) ** 2 + (bird.y - cy) ** 2 < R * R * 0.8) return die();
+        }
+      }
+    }
+    if (pillars[0].x + PW < -10) { pillars.shift(); addPillar(pillars[pillars.length - 1].x + SPACING); }
+    if (bird.y > H - 30 - R) { bird.y = H - 30 - R; return die(); }
+    if (bird.y < R) { bird.y = R; bird.vy = 0; }
+  }
+
+  function glowText(s, x, y, size, col) {
+    ctx.font = `${size}px ${size > 30 ? 'Monoton' : 'Fredoka'}, sans-serif`; ctx.textAlign = 'center';
+    ctx.shadowColor = col; ctx.shadowBlur = 16; ctx.fillStyle = '#fff'; ctx.fillText(s, x, y); ctx.shadowBlur = 0;
+  }
+
+  function draw() {
+    ctx.setTransform(dpr * scale, 0, 0, dpr * scale, 0, 0);
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#0d0520'); g.addColorStop(0.7, '#2a0d55'); g.addColorStop(1, '#4a1063');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#fff';
+    for (const s of stars) { ctx.globalAlpha = 0.4 + 0.3 * Math.sin(t * 2 + s.x); ctx.fillRect(s.x, s.y, s.s, s.s); }
+    ctx.globalAlpha = 1;
+    // Sonne
+    ctx.save(); ctx.beginPath(); ctx.arc(W / 2, H - 30, 90, Math.PI, 0); ctx.clip();
+    const sg = ctx.createLinearGradient(0, H - 120, 0, H - 30); sg.addColorStop(0, '#ffd93f'); sg.addColorStop(1, '#ff3ea5');
+    ctx.fillStyle = sg; ctx.fillRect(W / 2 - 90, H - 120, 180, 90);
+    ctx.fillStyle = '#2a0d55'; for (let i = 0; i < 5; i++) ctx.fillRect(W / 2 - 90, H - 70 + i * 9, 180, 2 + i);
+    ctx.restore();
+
+    // Säulen
+    ctx.lineWidth = 3;
+    for (const p of pillars) {
+      for (const [y0, h] of [[-10, p.y + 10], [p.y + p.gap, H - 30 - p.y - p.gap]]) {
+        ctx.fillStyle = 'rgba(20,8,48,.85)'; ctx.fillRect(p.x, y0, PW, h);
+        ctx.strokeStyle = '#29f0ff'; ctx.shadowColor = '#29f0ff'; ctx.shadowBlur = 12; ctx.strokeRect(p.x, y0, PW, h); ctx.shadowBlur = 0;
+      }
+      ctx.fillStyle = '#29f0ff';
+      ctx.fillRect(p.x - 4, p.y - 8, PW + 8, 8); ctx.fillRect(p.x - 4, p.y + p.gap, PW + 8, 8);
+    }
+
+    // Boden-Gitter
+    ctx.fillStyle = '#12052b'; ctx.fillRect(0, H - 30, W, 30);
+    ctx.strokeStyle = '#ff3ea5'; ctx.lineWidth = 1.5; ctx.shadowColor = '#ff3ea5'; ctx.shadowBlur = 8;
+    ctx.beginPath(); ctx.moveTo(0, H - 30); ctx.lineTo(W, H - 30); ctx.stroke();
+    const off = state === 'over' ? 0 : (t * SPEED) % 30;
+    ctx.beginPath();
+    for (let x = -off; x < W + 30; x += 30) { ctx.moveTo(x, H - 30); ctx.lineTo(x + (x - W / 2) * 0.4, H); }
+    ctx.stroke(); ctx.shadowBlur = 0;
+
+    // Spieler: ein leuchtender Neon-Gleiter
+    ctx.save(); ctx.translate(bird.x, bird.y);
+    ctx.rotate(Math.max(-0.5, Math.min(1.2, bird.vy / 600)));
+    ctx.shadowColor = '#ff3ea5'; ctx.shadowBlur = 18;
+    ctx.fillStyle = '#ff3ea5'; ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0;
+    const wing = Math.sin(t * 22) * (state === 'play' && bird.vy < 0 ? 7 : 3);
+    ctx.fillStyle = '#ffd93f'; ctx.beginPath(); ctx.moveTo(-4, 0); ctx.lineTo(-18, -6 + wing); ctx.lineTo(-12, 4); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(5, -4, 4.5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#0d0520'; ctx.beginPath(); ctx.arc(6.5, -4, 2, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#29f0ff'; ctx.beginPath(); ctx.moveTo(11, 0); ctx.lineTo(19, 3); ctx.lineTo(11, 6); ctx.fill();
+    ctx.restore();
+
+    if (flash) { ctx.fillStyle = `rgba(255,255,255,${flash * 0.5})`; ctx.fillRect(0, 0, W, H); }
+
+    if (state === 'play') glowText(score, W / 2, 60, 44, '#ff3ea5');
+    if (state === 'start') {
+      glowText('Neon Flug', W / 2, 130, 42, '#ff3ea5');
+      if (Math.sin(t * 5) > -0.3) glowText('Tippen oder Leertaste', W / 2, 250, 18, '#29f0ff');
+      if (best) glowText('Rekord: ' + best, W / 2, 280, 15, '#8b5cff');
+    }
+    if (state === 'over') {
+      glowText('Game Over', W / 2, 130, 38, '#ff3ea5');
+      glowText('Punkte: ' + score + '   Rekord: ' + best, W / 2, 185, 20, '#29f0ff');
+      if (deadT > 0.5 && Math.sin(t * 5) > -0.3) glowText('Nochmal: Tippen oder Leertaste', W / 2, 240, 16, '#8b5cff');
+    }
+  }
+
+  let last = performance.now();
+  function frame(now) {
+    let dt = Math.min((now - last) / 1000, 0.05); last = now;
+    while (dt > 0) { const s = Math.min(dt, 1 / 120); update(s); dt -= s; }
+    draw(); requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
