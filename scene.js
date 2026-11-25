@@ -123,14 +123,9 @@
   const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 1.6, sizeAttenuation: false, fog: false, transparent: true, opacity: 0.85 }));
   scene.add(stars);
 
-  // Kamera folgt leicht Maus oder Neigung des Geräts
+  // Kamera folgt leicht der Maus (nicht der Geräteneigung, das wackelt)
   let tx = 0, ty = 0;
   addEventListener('pointermove', (e) => { tx = e.clientX / innerWidth - 0.5; ty = e.clientY / innerHeight - 0.5; });
-  addEventListener('deviceorientation', (e) => {
-    if (e.gamma == null) return;
-    tx = Math.max(-0.5, Math.min(0.5, e.gamma / 60));
-    ty = Math.max(-0.5, Math.min(0.5, (e.beta - 45) / 90));
-  });
 
   function resize() {
     const w = innerWidth, h = innerHeight;
