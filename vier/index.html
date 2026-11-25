@@ -361,17 +361,14 @@
   }
   function shade(hex, k) { const n = parseInt(hex.slice(1), 16), f = (c) => Math.round(k > 1 ? c + (255 - c) * (k - 1) : c * k); return `rgb(${f(n >> 16)},${f(n >> 8 & 255)},${f(n & 255)})`; }
   const cx = (c) => pad + (c + 0.5) * size, cy = (r) => top + (ROWS - 1 - r + 0.5) * size;
-  // Spielstein im Snake-Stil: rund, mit Glanz und kleinen Augen
+  // Spielstein: rund, mit Glanz und innerem Ring
   function piece(x, y, p, alpha = 1, look = 0) {
     const col = colors()[p], R = size * 0.4;
     ctx.globalAlpha = alpha;
     ctx.fillStyle = shade(col, 0.72); ctx.beginPath(); ctx.arc(x, y + size * 0.035, R, 0, 7); ctx.fill();
     ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x, y, R, 0, 7); ctx.fill();
     ctx.fillStyle = 'rgba(255,255,255,.3)'; ctx.beginPath(); ctx.ellipse(x - R * 0.3, y - R * 0.4, R * 0.35, R * 0.2, -0.5, 0, 7); ctx.fill();
-    for (const s of [-1, 1]) {
-      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x + s * R * 0.32, y + R * 0.08, R * 0.2, 0, 7); ctx.fill();
-      ctx.fillStyle = '#1b1b1b'; ctx.beginPath(); ctx.arc(x + s * R * 0.32 + look * R * 0.08, y + R * 0.12, R * 0.1, 0, 7); ctx.fill();
-    }
+    ctx.strokeStyle = 'rgba(255,255,255,.22)'; ctx.lineWidth = R * 0.12; ctx.beginPath(); ctx.arc(x, y, R * 0.62, 0, 7); ctx.stroke();
     ctx.globalAlpha = 1;
   }
   function draw() {
@@ -380,6 +377,9 @@
     // Rasen
     const g = size / 2;
     for (let y = 0; y * g < H; y++) for (let x = 0; x * g < W; x++) { ctx.fillStyle = w.grass[(x + y) & 1]; ctx.fillRect(x * g, y * g, g + 1, g + 1); }
+    const by = top - size * 0.1;
+    // Schatten unter der Wand
+    { const yb = H - pad * 0.3 - size * 0.05; ctx.fillStyle = w.side; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(pad * 0.4, yb - size * 0.2, W - pad * 0.8, size * 0.34, size * 0.17) : ctx.rect(pad * 0.4, yb, W - pad * 0.8, size * 0.14); ctx.fill(); }
     // Steine im Feld (hinter der Wand)
     for (let c = 0; c < COLS; c++) for (let r = 0; r < grid[c].length; r++) {
       if (anim && anim.c === c && anim.r === r) continue;
@@ -388,17 +388,12 @@
     }
     if (anim) piece(cx(anim.c), anim.y, anim.p);
     // Wand mit Löchern
-    const by = top - size * 0.1;
-    ctx.fillStyle = w.side;
-    ctx.beginPath(); ctx.roundRect ? ctx.roundRect(pad * 0.4, by + size * 0.12, W - pad * 0.8, H - by - pad * 0.2, size * 0.25) : ctx.rect(pad * 0.4, by, W - pad * 0.8, H - by);
-    for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) { ctx.moveTo(cx(c) + size * 0.42, cy(r) + size * 0.06); ctx.arc(cx(c), cy(r) + size * 0.06, size * 0.42, 0, 7, true); }
-    ctx.fill('evenodd');
     ctx.fillStyle = w.wall;
     ctx.beginPath(); ctx.roundRect ? ctx.roundRect(pad * 0.4, by, W - pad * 0.8, H - by - pad * 0.3, size * 0.25) : ctx.rect(pad * 0.4, by, W - pad * 0.8, H - by);
-    for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) { ctx.moveTo(cx(c) + size * 0.42, cy(r)); ctx.arc(cx(c), cy(r), size * 0.42, 0, 7, true); }
+    for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) { ctx.moveTo(cx(c) + size * 0.42, cy(r)); ctx.arc(cx(c), cy(r), size * 0.42, 0, Math.PI * 2, true); }
     ctx.fill('evenodd');
-    ctx.strokeStyle = w.top; ctx.lineWidth = size * 0.05;
-    for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) { ctx.beginPath(); ctx.arc(cx(c), cy(r), size * 0.43, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke(); }
+    ctx.strokeStyle = 'rgba(0,0,0,.18)'; ctx.lineWidth = size * 0.05;
+    for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) { ctx.beginPath(); ctx.arc(cx(c), cy(r), size * 0.4, Math.PI * 1.15, Math.PI * 1.85); ctx.stroke(); }
     // Gewinnreihe
     if (winLine) {
       const pulse = 0.5 + 0.5 * Math.sin(t * 6);
