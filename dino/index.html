@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#4a752c">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Dino Runner – Arcadia</title>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
   :root { --hud: #4a752c; --frame: #578a34; --ink: #203018; --muted: #6b7d5c; --soft: #f1f7e8; --soft-2: #e3efd3;
     --blue: #3f6ff0; --blue-dark: #2b51c4; --p1: #6fa344; --p2: #3f6a24; --p3: #294a15; }
@@ -27,6 +27,14 @@
   .icon-btn { width: 40px; height: 40px; border: 0; border-radius: 12px; cursor: pointer; background: rgba(255,255,255,.12);
     color: #fff; font-size: 20px; display: grid; place-items: center; }
   .icon-btn:hover { background: rgba(255,255,255,.22); }
+  body.retro #hud { background: transparent !important; box-shadow: none; position: absolute; left: 0; right: 0; z-index: 2; }
+  body.retro #hud .stat { visibility: hidden; }
+  body.retro .icon-btn { background: transparent; color: #8a8a8a; }
+  body.retro #frame { background: transparent !important; box-shadow: none; padding: 0; }
+  body.retro #app { position: relative; }
+  body.retro #board { border-radius: 0; transition: filter .9s; }
+  body.retro.night { background: #202020 !important; }
+  body { transition: background-color .9s; }
   #frame { position: relative; background: var(--frame); padding: 10px; border-radius: 0 0 16px 16px; box-shadow: 0 18px 40px rgba(0,0,0,.3); }
   #board { display: block; border-radius: 6px; touch-action: none; }
   #hint { position: absolute; left: 50%; bottom: 30px; transform: translateX(-50%); padding: 12px 18px; border-radius: 16px;
@@ -94,7 +102,11 @@
 (() => {
   'use strict';
   const $ = (id) => document.getElementById(id);
-  const cv = $('board'), ctx = cv.getContext('2d');
+  const cv = $('board'), main = cv.getContext('2d');
+  let ctx = main;
+  // Retro: Szene wird klein gezeichnet und grob hochskaliert (Pixel-Look)
+  const PX = 9, offCv = document.createElement('canvas'), offCtx = offCv.getContext('2d');
+  let night = false;
 
   // ---------- Einstellungen ----------
   const OPTS = {
@@ -152,6 +164,8 @@
     draw();
   }
   function applyWorld() {
+    document.body.classList.toggle('retro', retro());
+    if (!retro()) setNight(false);
     const w = W();
     $('hud').style.background = w.hud; $('frame').style.background = w.frame;
     document.body.style.background = `radial-gradient(120% 90% at 50% 0%, ${w.page[0]} 0%, ${w.page[1]} 55%, ${w.page[2]} 100%) fixed ${w.page[1]}`;
@@ -162,7 +176,12 @@
   const GRAV = 70, DX = 3.2;
   let state = 'ready', dino, obs, dist, score, best, speed, nextGap, t = 0, deadT = 0, shake = 0, parts = [], scroll = 0;
   let jumpHeld = false, duckHeld = false;
+  function setNight(on) {
+    night = on; cv.style.filter = on ? 'invert(1)' : '';
+    document.body.classList.toggle('night', on);
+  }
   function newRound() {
+    setNight(false);
     dino = { y: GROUND, vy: 0, duck: false, ground: true };
     obs = []; dist = 0; score = 0; parts = []; best = getBest(); speed = v('speed'); nextGap = 9;
     $('score').textContent = 0; $('best').textContent = best;
@@ -285,6 +304,7 @@
     const s = Math.floor(dist / 2);
     if (s !== score) {
       score = s; $('score').textContent = score;
+      if (retro()) { const n = score >= 500 && Math.floor(score / 500) % 2 === 1; if (n !== night) setNight(n); }
       if (score > 0 && score % 100 === 0) beep(700, 0.25, 'square', 0.04, 1.5);
     }
 
@@ -397,8 +417,12 @@
 
   function draw() {
     if (!dino) return;
-    const w = W(), c = cell;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const w = W(), pix = retro(), c = pix ? PX : cell;
+    if (pix) {
+      ctx = offCtx;
+      if (offCv.width !== COLS * PX) { offCv.width = COLS * PX; offCv.height = ROWS * PX; }
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+    } else { ctx = main; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
     if (shake) ctx.translate((Math.random() - 0.5) * shake * 14, (Math.random() - 0.5) * shake * 14);
     // Rasen im Schachbrettmuster, scrollt mit
     const off = scroll % 2;
@@ -433,6 +457,32 @@
     ctx.globalAlpha = 1;
     drawDino(c);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
+    if (pix) {
+      // Mond und Sterne (werden in der Nacht durch das Invertieren hell)
+      if (night) {
+        ctx.fillStyle = '#bdbdbd';
+        ctx.beginPath(); ctx.arc(COLS * PX * 0.78, PX * 2.2, PX * 0.9, 0, 7); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(COLS * PX * 0.78 + PX * 0.45, PX * 2.0, PX * 0.8, 0, 7); ctx.fill();
+        ctx.fillStyle = '#9a9a9a';
+        for (let i = 0; i < 14; i++) ctx.fillRect(((i * 53) % (COLS * PX)), 4 + (i * 29) % (PX * 5), 2, 2);
+      }
+      // Kanten hart machen: jedes Pixel auf einen von vier Grautönen runden
+      const img = ctx.getImageData(0, 0, offCv.width, offCv.height), d = img.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const l = d[i] * 0.3 + d[i + 1] * 0.59 + d[i + 2] * 0.11;
+        const q = l > 232 ? 255 : l > 180 ? 210 : l > 120 ? 154 : 83;
+        d[i] = d[i + 1] = d[i + 2] = q; d[i + 3] = 255;
+      }
+      ctx.putImageData(img, 0, 0);
+      ctx = main;
+      ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(offCv, 0, 0, cv.width, cv.height);
+      // Retro-Zählanzeige oben rechts im Feld
+      const fs = Math.round(cell * 0.5 * dpr);
+      ctx.font = `${fs}px 'Press Start 2P', monospace`; ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+      ctx.fillStyle = '#9a9a9a'; ctx.fillText('REKORD ' + best, cv.width - fs * 8, fs * 3);
+      ctx.fillStyle = '#535353'; ctx.fillText(String(score), cv.width - fs * 1.5, fs * 3);
+    }
   }
 
   let last = performance.now();
