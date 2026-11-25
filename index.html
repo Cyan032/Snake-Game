@@ -3,161 +3,92 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#4a752c">
+<meta name="theme-color" content="#5b4636">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Snake">
-<meta name="description" content="Snake im Browser: 16 Spielmodi, Parkour-Training mit 16 Leveln, 6 Welten, Karten und viele Einstellungen.">
-<title>Snake</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23aad751'/%3E%3Cpath d='M12 46C12 30 30 36 32 24S50 12 52 20' fill='none' stroke='%234e7cf6' stroke-width='10' stroke-linecap='round'/%3E%3Ccircle cx='52' cy='20' r='3' fill='%23fff'/%3E%3C/svg%3E">
+<meta name="apple-mobile-web-app-title" content="Mammut Games">
+<meta name="description" content="Mammut Games – kleine Browserspiele zum Sofort-Losspielen.">
+<title>Mammut Games</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%235b4636'/%3E%3Cellipse cx='34' cy='30' rx='20' ry='15' fill='%23a1795a'/%3E%3Ccircle cx='17' cy='26' r='11' fill='%23a1795a'/%3E%3Cpath d='M10 30c-2 8 0 16 6 18' stroke='%23a1795a' stroke-width='6' fill='none' stroke-linecap='round'/%3E%3Cpath d='M18 34c-6 4-6 10-1 12' stroke='%23fff3e0' stroke-width='3.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=10">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    font-family: 'Fredoka', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color: #2e2219;
+    background: #4a3a2c radial-gradient(120% 80% at 50% 0%, #8a6a4c 0%, #5b4636 50%, #33271d 100%) fixed;
+    padding: 28px 16px 40px;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; }
+  header { text-align: center; color: #fff8ef; margin: 10px 0 30px; }
+  .mammut { width: 150px; height: 110px; filter: drop-shadow(0 8px 14px rgba(0,0,0,.3)); animation: stomp 3s ease-in-out infinite; }
+  h1 { margin: 6px 0 4px; font-size: clamp(38px, 8vw, 60px); font-weight: 700; letter-spacing: .5px; }
+  header p { margin: 0; font-size: 18px; opacity: .85; }
+  .games { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 18px; }
+  .game {
+    display: flex; flex-direction: column; border-radius: 22px; overflow: hidden; background: #fff; color: inherit;
+    text-decoration: none; box-shadow: 0 16px 36px rgba(0,0,0,.3); transition: transform .15s, box-shadow .15s;
+  }
+  a.game:hover { transform: translateY(-4px); box-shadow: 0 22px 44px rgba(0,0,0,.35); }
+  .thumb { height: 150px; display: grid; place-items: center; }
+  .thumb svg { width: 80%; height: 80%; }
+  .info { padding: 14px 18px 18px; }
+  .info h2 { margin: 0 0 4px; font-size: 24px; }
+  .info p { margin: 0 0 12px; color: #6d5b4c; font-size: 15px; line-height: 1.45; }
+  .btn { display: inline-block; padding: 9px 18px; border-radius: 12px; background: #3f6ff0; color: #fff; font-weight: 600; box-shadow: 0 4px 0 #2b51c4; }
+  .game.soon { opacity: .7; }
+  .soon .thumb { background: repeating-linear-gradient(45deg, #efe6dc 0 14px, #e7dccf 14px 28px); color: #a08b78; font-size: 44px; font-weight: 700; }
+  .soon .btn { background: #d9cdbf; color: #6d5b4c; box-shadow: 0 4px 0 #c4b5a4; }
+  footer { text-align: center; color: #e9dccd; opacity: .7; margin-top: 34px; font-size: 14px; }
+  @keyframes stomp { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px) rotate(-1deg); } }
+  @media (prefers-reduced-motion: reduce) { .mammut { animation: none; } }
+</style>
 </head>
 <body>
-<input id="keytrap" type="text" inputmode="none" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-hidden="true" tabindex="-1">
-<main id="app">
-  <header id="hud">
-    <div class="stat" id="s-score" title="Äpfel"><i data-icon="apple"></i><span id="score">0</span></div>
-    <div class="stat" id="s-best" title="Rekord"><i data-icon="trophy"></i><span id="best">0</span></div>
-    <div class="stat hidden" id="s-p1"><i class="dot" id="p1dot"></i><span id="p1">0</span></div>
-    <div class="stat hidden" id="s-p2"><i class="dot" id="p2dot"></i><span id="p2">0</span></div>
-    <div class="stat hidden" id="s-time" title="Zeit"><i data-icon="clock"></i><span id="time">60</span></div>
-    <div class="stat hidden" id="s-stars" title="Sterne"><span class="sym star">★</span><span id="stars">0/3</span></div>
-    <div class="stat hidden" id="s-deaths" title="Crashs"><span class="sym">✕</span><span id="deaths">0</span></div>
-    <div class="stat hidden" id="s-hunger" title="Hunger"><span class="lbl">Hunger</span><span class="bar" id="hunger-bar"><i></i></span></div>
-    <div class="stat hidden" id="s-zone" title="Nächste Feuerwand"><span class="lbl">Feuer</span><span id="zone">15</span></div>
-    <div class="chip hidden" id="s-fx"></div>
-    <div class="grow"></div>
-    <span id="mode-label"></span>
-    <button class="icon-btn" id="btn-sound" type="button" title="Ton an/aus (M)" aria-label="Ton an/aus"></button>
-    <button class="icon-btn" id="btn-pause" type="button" title="Pause (Leertaste)" aria-label="Pause"></button>
-    <button class="icon-btn" id="btn-menu" type="button" title="Menü" aria-label="Menü"><i data-icon="menu"></i></button>
+<div class="wrap">
+  <header>
+    <svg class="mammut" viewBox="0 0 150 110" aria-hidden="true">
+      <ellipse cx="88" cy="58" rx="48" ry="34" fill="#a1795a"/>
+      <rect x="56" y="78" width="16" height="26" rx="7" fill="#8c6649"/>
+      <rect x="104" y="78" width="16" height="26" rx="7" fill="#8c6649"/>
+      <circle cx="48" cy="46" r="27" fill="#a1795a"/>
+      <path d="M30 58c-10 14-8 30 4 38" stroke="#a1795a" stroke-width="13" fill="none" stroke-linecap="round"/>
+      <path d="M44 66c-16 6-20 20-10 28" stroke="#fff3e0" stroke-width="7" fill="none" stroke-linecap="round"/>
+      <ellipse cx="66" cy="40" rx="11" ry="16" fill="#8c6649"/>
+      <circle cx="40" cy="40" r="4.5" fill="#2e2219"/><circle cx="41.5" cy="38.5" r="1.5" fill="#fff"/>
+      <path d="M60 22c6-8 18-10 26-4" stroke="#7a573d" stroke-width="5" fill="none" stroke-linecap="round"/>
+    </svg>
+    <h1>Mammut Games</h1>
+    <p>Such dir ein Spiel aus und leg los!</p>
   </header>
-  <div id="frame">
-    <canvas id="board" aria-label="Spielfeld"></canvas>
-    <div id="toast" class="hidden"></div>
-    <div id="hint" class="hidden"></div>
-    <div id="overlay" class="hidden"></div>
-  </div>
-  <div id="dpad">
-    <button type="button" data-dir="up" aria-label="Hoch">▲</button>
-    <button type="button" data-dir="left" aria-label="Links">◀</button>
-    <button type="button" data-dir="right" aria-label="Rechts">▶</button>
-    <button type="button" data-dir="down" aria-label="Runter">▼</button>
-  </div>
-</main>
-
-<div id="menu" class="hidden" role="dialog" aria-label="Spielmenü">
-  <div class="menu-card">
-    <button class="close hidden" id="menu-close" type="button" aria-label="Menü schließen">✕</button>
-    <div class="logo">
-      <svg viewBox="0 0 120 60" aria-hidden="true">
-        <path d="M10 42c14 0 14-22 30-22s16 22 32 22 14-18 26-20" fill="none" stroke="#4e7cf6" stroke-width="13" stroke-linecap="round"/>
-        <circle cx="100" cy="22" r="9.5" fill="#4e7cf6"/>
-        <circle cx="102" cy="17.5" r="3.6" fill="#fff"/><circle cx="103" cy="17.5" r="1.8" fill="#1b1b1b"/>
-        <circle cx="102" cy="26.5" r="3.6" fill="#fff"/><circle cx="103" cy="26.5" r="1.8" fill="#1b1b1b"/>
-      </svg>
-      <h1>Snake</h1>
+  <main class="games">
+    <a class="game" href="/snake/">
+      <div class="thumb" style="background:#aad751">
+        <svg viewBox="0 0 120 60" aria-hidden="true">
+          <path d="M10 42c14 0 14-22 30-22s16 22 32 22 14-18 26-20" fill="none" stroke="#4e7cf6" stroke-width="13" stroke-linecap="round"/>
+          <circle cx="100" cy="22" r="9.5" fill="#4e7cf6"/>
+          <circle cx="102" cy="17.5" r="3.6" fill="#fff"/><circle cx="103" cy="17.5" r="1.8" fill="#1b1b1b"/>
+          <circle cx="102" cy="26.5" r="3.6" fill="#fff"/><circle cx="103" cy="26.5" r="1.8" fill="#1b1b1b"/>
+          <circle cx="112" cy="46" r="5" fill="#e7471d"/>
+        </svg>
+      </div>
+      <div class="info">
+        <h2>Snake</h2>
+        <p>Der Klassiker mit 16 Spielmodi, Parkour-Training und 6 Welten.</p>
+        <span class="btn">Spielen</span>
+      </div>
+    </a>
+    <div class="game soon">
+      <div class="thumb">?</div>
+      <div class="info">
+        <h2>Bald mehr</h2>
+        <p>Das nächste Spiel ist schon in Planung.</p>
+        <span class="btn">Demnächst</span>
+      </div>
     </div>
-    <div class="tabs" id="tabs">
-      <button type="button" data-tab="modes">Modi</button>
-      <button type="button" data-tab="parkour">Parkour</button>
-      <button type="button" data-tab="settings">Einstellungen</button>
-    </div>
-
-    <section class="pane" data-pane="modes">
-      <div class="modes" id="modes"></div>
-      <p class="mode-desc" id="mode-desc"></p>
-      <button class="summary" id="summary" type="button"></button>
-    </section>
-
-    <section class="pane" data-pane="parkour">
-      <p class="pk-intro">Lenk die Schlange durch den Parcours bis zur Zielflagge. Sammle alle Sterne und knack deine Bestzeit.
-        Nach einem Crash geht es am letzten Checkpoint weiter.</p>
-      <div class="seg tiers" id="tiers"></div>
-      <div class="levels" id="levels"></div>
-      <p class="pk-total" id="pk-total"></p>
-    </section>
-
-    <section class="pane" data-pane="settings">
-      <div class="group">Spiel</div>
-      <div class="row">
-        <div class="section">Tempo</div>
-        <div class="seg" data-setting="speed">
-          <button type="button" data-v="slow">Langsam</button><button type="button" data-v="normal">Normal</button><button type="button" data-v="fast">Schnell</button>
-        </div>
-      </div>
-      <div class="row">
-        <div class="section">Spielfeld</div>
-        <div class="seg" data-setting="size">
-          <button type="button" data-v="s">Klein</button><button type="button" data-v="m">Mittel</button><button type="button" data-v="l">Groß</button><button type="button" data-v="xl">Riesig</button>
-        </div>
-      </div>
-      <div class="row">
-        <div class="section">Äpfel</div>
-        <div class="seg" data-setting="apples">
-          <button type="button" data-v="1">1</button><button type="button" data-v="3">3</button><button type="button" data-v="5">5</button><button type="button" data-v="10">10</button>
-        </div>
-      </div>
-      <div class="row">
-        <div class="section">Goldäpfel</div>
-        <div class="seg" data-setting="bonus">
-          <button type="button" data-v="on">An</button><button type="button" data-v="off">Aus</button>
-        </div>
-      </div>
-      <div class="row">
-        <div class="section">KI-Gegner</div>
-        <div class="seg" data-setting="ai">
-          <button type="button" data-v="easy">Leicht</button><button type="button" data-v="normal">Mittel</button><button type="button" data-v="hard">Schwer</button>
-        </div>
-      </div>
-
-      <div class="group">Welt &amp; Karte</div>
-      <div class="row">
-        <div class="section">Welt</div>
-        <div class="chips" id="themes"></div>
-      </div>
-      <div class="row">
-        <div class="section">Karte</div>
-        <div class="chips" id="maps"></div>
-      </div>
-
-      <div class="group">Deine Schlange</div>
-      <div class="row">
-        <div class="section">Farbe</div>
-        <div class="swatches" id="swatches"></div>
-      </div>
-      <div class="row">
-        <div class="section">Muster</div>
-        <div class="seg" data-setting="pattern">
-          <button type="button" data-v="plain">Uni</button><button type="button" data-v="stripes">Streifen</button><button type="button" data-v="dots">Punkte</button><button type="button" data-v="rainbow">Regenbogen</button>
-        </div>
-      </div>
-      <div class="group">Tastentest</div>
-      <div class="row">
-        <div class="section">Im Spiel</div>
-        <div class="seg" data-setting="keydebug">
-          <button type="button" data-v="false">Aus</button><button type="button" data-v="true">Tasten anzeigen</button>
-        </div>
-      </div>
-      <p class="keytest" id="keytest">Drück eine Taste – hier steht dann, was ankommt.</p>
-      <div class="group">Zurücksetzen</div>
-      <div class="resets">
-        <button type="button" class="reset keys" data-reset="keys">Steuerung zurücksetzen (WASD / Pfeiltasten)</button>
-        <button type="button" class="reset" data-reset="settings">Einstellungen zurücksetzen</button>
-        <button type="button" class="reset" data-reset="best">Rekorde löschen</button>
-        <button type="button" class="reset" data-reset="park">Parkour-Fortschritt löschen</button>
-        <button type="button" class="reset danger" data-reset="all">Alles zurücksetzen</button>
-      </div>
-    </section>
-
-    <button class="play" id="play" type="button">▶ Spielen</button>
-    <p class="help" id="help"></p>
-  </div>
+  </main>
+  <footer>Mammut Games</footer>
 </div>
-
-<script src="levels.js?v=10"></script>
-<script src="game.js?v=10"></script>
 </body>
 </html>

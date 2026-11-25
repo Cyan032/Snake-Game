@@ -1,3 +1,13 @@
+# Mammut Games
+
+Eine Sammlung kleiner Browserspiele. Die Startseite (`index.html`) zeigt alle Spiele; jedes Spiel liegt in einem eigenen Ordner.
+
+| Spiel | Ordner |
+| --- | --- |
+| Snake | `snake/` |
+
+Ein neues Spiel bekommt einen eigenen Ordner und eine Karte auf der Startseite.
+
 # Snake
 
 Snake im Browser im Stil von Google Snake: Rasen im Schachbrettmuster, eine runde Schlange mit Augen und flüssige Bewegung.
@@ -38,7 +48,7 @@ Folgende Elemente kommen in den Leveln vor:
 - Kreissägen, die auf sichtbaren Schienen hin und her fahren
 - Checkpoints
 
-Die Level stehen in `levels.js`. Am Anfang der Datei steht eine Zeichen-Legende, damit lassen sich auch eigene Level bauen.
+Die Level stehen in `snake/levels.js`. Am Anfang der Datei steht eine Zeichen-Legende, damit lassen sich auch eigene Level bauen.
 
 ## Einstellungen
 
@@ -61,10 +71,11 @@ Kurz nach dem Erreichen eines Feldes zählt ein Tastendruck noch für dieses Fel
 
 ## Dateien
 
-- `index.html` – Seite und Menü
-- `style.css` – Aussehen
-- `game.js` – Spiellogik und Grafik
-- `levels.js` – Parkour-Level
+- `index.html` – Startseite von Mammut Games
+- `snake/index.html` – Seite und Menü von Snake
+- `snake/style.css` – Aussehen
+- `snake/game.js` – Spiellogik und Grafik
+- `snake/levels.js` – Parkour-Level
 
 ## Lokal starten
 
