@@ -12,6 +12,7 @@ const BOARDS = {
   flug: { max: 5000 },
   dino: { max: 500000 },
   block: { max: 50000000 },
+  vier: { max: 100000 },
   sol1: { low: true, min: 30, max: 36000 },
   sol3: { low: true, min: 30, max: 36000 },
 };

@@ -41,6 +41,7 @@
     const sol = get('sol.stats', {});
     if (sol.best1) out.sol1 = Math.round(sol.best1 * 10) / 10;
     if (sol.best3) out.sol3 = Math.round(sol.best3 * 10) / 10;
+    const vw = (get('vier.stats', {}).k4 || {}).w; if (vw) out.vier = vw;
     return out;
   }
   const LOW = { sol1: true, sol3: true };
@@ -101,7 +102,7 @@
 
   // Wenn ein Spiel einen Rekord speichert, kurz danach automatisch hochladen
   let timer = 0;
-  const RX = /^(snake\.fair\.|snake\.park$|flug\.best\.|dino\.best\.|block\.best\.|sol\.stats$)/;
+  const RX = /^(snake\.fair\.|snake\.park$|flug\.best\.|dino\.best\.|block\.best\.|sol\.stats$|vier\.stats$)/;
   const plan = () => { clearTimeout(timer); timer = setTimeout(() => A.sync().catch(() => {}), 1500); };
   try {
     const orig = Storage.prototype.setItem;

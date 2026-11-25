@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="Arcadia">
 <meta name="description" content="Arcadia – Browserspiele zum Sofort-Losspielen.">
 <title>Arcadia</title>
-<script src="/arcadia.js?v=2"></script>
+<script src="/arcadia.js?v=3"></script>
 <link rel="icon" type="image/png" sizes="64x64" href="/icons/favicon-64.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
@@ -102,6 +102,19 @@
   .rec { display: inline-flex; align-items: center; padding: 10px 14px; margin-left: 6px; border-radius: 12px; font-weight: 700; letter-spacing: 2px; font-size: 14px;
     color: #c9bdf2; border: 2px solid rgba(139,92,255,.6); cursor: pointer; }
   .rec:hover { color: #fff; border-color: var(--cyan); }
+  .vierprev { background: linear-gradient(#0d0520, #2a0d55); overflow: hidden; display: grid; place-items: center; }
+  .vierprev span { width: 150px; height: 108px; border: 3px solid var(--violet); border-radius: 12px; box-shadow: 0 0 14px var(--violet);
+    background:
+      radial-gradient(circle at 25px 89px, var(--pink) 10px, transparent 11px),
+      radial-gradient(circle at 50px 89px, var(--cyan) 10px, transparent 11px),
+      radial-gradient(circle at 50px 64px, var(--pink) 10px, transparent 11px),
+      radial-gradient(circle at 75px 89px, var(--pink) 10px, transparent 11px),
+      radial-gradient(circle at 75px 64px, var(--cyan) 10px, transparent 11px),
+      radial-gradient(circle at 75px 39px, var(--pink) 10px, transparent 11px),
+      radial-gradient(circle at 100px 89px, var(--cyan) 10px, transparent 11px),
+      radial-gradient(circle, rgba(139,92,255,.35) 9px, transparent 10px) 12px 2px / 25px 25px;
+    animation: vp 2.4s ease-in-out infinite; }
+  @keyframes vp { 50% { box-shadow: 0 0 26px var(--pink); border-color: var(--pink); } }
   footer { position: relative; z-index: 1; text-align: center; margin-top: 40px; font-size: 13px; letter-spacing: 3px; color: #a99ad8; }
 
   @keyframes blink { 50% { opacity: .35; } }
@@ -160,6 +173,14 @@
         <h2>Solitaire</h2>
         <p>Der Kartenklassiker: Spalten ordnen und alle vier Farben ablegen.</p>
         <span class="play">SPIELEN</span> <span class="rec" data-href="/rekorde/#solitaire">REKORDE</span>
+      </div>
+    </a>
+    <a class="game" href="/vier/">
+      <div class="screen vierprev"><span></span></div>
+      <div class="info">
+        <h2>Vier in Reihe</h2>
+        <p>Steine einwerfen und vier in eine Reihe bringen – gegen die KI oder zu zweit.</p>
+        <span class="play">SPIELEN</span> <span class="rec" data-href="/rekorde/#vier">REKORDE</span>
       </div>
     </a>
     <div class="game soon">

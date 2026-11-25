@@ -9,6 +9,7 @@ Eine Sammlung kleiner Browserspiele. Die Startseite (`index.html`) zeigt alle Sp
 | Dino Runner | `dino/` |
 | Blockfall | `block/` |
 | Solitaire | `solitaire/` |
+| Vier in Reihe | `vier/` |
 
 Die Seite `rekorde/` zeigt die Rekorde aller Spiele. Als Rekord zählt nur, was mit fairen Einstellungen geschafft wurde.
 
