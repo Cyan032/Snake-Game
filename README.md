@@ -72,6 +72,8 @@ Kurz nach dem Erreichen eines Feldes zählt ein Tastendruck noch für dieses Fel
 ## Dateien
 
 - `index.html` – Startseite von Arcadia
+- `scene.js` – 3D-Hintergrund der Startseite (WebGL)
+- `vendor/three.min.js` – 3D-Bibliothek three.js (MIT-Lizenz)
 - `snake/index.html` – Seite und Menü von Snake
 - `snake/style.css` – Aussehen
 - `snake/game.js` – Spiellogik und Grafik

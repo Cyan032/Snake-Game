@@ -20,25 +20,9 @@
     font-family: 'Fredoka', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color: #fff;
     background: var(--ink); overflow-x: hidden;
   }
-  /* Hintergrund: Sternenhimmel, Sonne und Neon-Gitterboden */
-  #stars { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; }
-  .sky { position: fixed; inset: 0; z-index: 0; pointer-events: none;
-    background: radial-gradient(90% 60% at 50% 100%, rgba(255,62,165,.35), transparent 60%),
-                linear-gradient(#0d0520 0%, #1d0b44 55%, #3a0f5c 100%); mix-blend-mode: screen; }
-  .sun { position: fixed; left: 50%; bottom: 30vh; width: min(46vw, 380px); aspect-ratio: 1; transform: translate(-50%, 50%);
-    border-radius: 50%; z-index: 0; pointer-events: none; opacity: .85;
-    background: linear-gradient(#ffd23f 10%, #ff6b6b 50%, var(--pink) 90%);
-    -webkit-mask: repeating-linear-gradient(#000 0 14px, transparent 14px 20px) bottom / 100% 55% no-repeat, linear-gradient(#000, #000) top / 100% 46% no-repeat;
-            mask: repeating-linear-gradient(#000 0 14px, transparent 14px 20px) bottom / 100% 55% no-repeat, linear-gradient(#000, #000) top / 100% 46% no-repeat;
-    filter: drop-shadow(0 0 40px rgba(255,62,165,.6)); }
-  .floor { position: fixed; left: -50%; right: -50%; bottom: 0; height: 30vh; z-index: 0; pointer-events: none;
-    perspective: 260px; overflow: hidden; }
-  .floor::before { content: ''; position: absolute; inset: -100% 0 0; transform: rotateX(62deg); transform-origin: bottom;
-    background-image: linear-gradient(var(--pink) 2px, transparent 2px), linear-gradient(90deg, var(--pink) 2px, transparent 2px);
-    background-size: 60px 60px; animation: grid 1.2s linear infinite; opacity: .75;
-    -webkit-mask: linear-gradient(transparent, #000 45%); mask: linear-gradient(transparent, #000 45%); }
-  .floor::after { content: ''; position: absolute; inset: 0; background: linear-gradient(var(--ink), transparent 40%); }
 
+  #scene { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; display: block;
+    background: linear-gradient(#0d0520 0%, #1d0b44 55%, #3a0f5c 100%); }
   .wrap { position: relative; z-index: 1; max-width: 960px; margin: 0 auto; padding: 40px 18px 34vh; }
   header { text-align: center; margin: 10px 0 34px; }
   h1 {
@@ -58,9 +42,10 @@
     position: relative; display: flex; flex-direction: column; border-radius: 20px; overflow: hidden; text-decoration: none; color: #fff;
     background: rgba(20, 8, 48, .78); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
     border: 2px solid rgba(139,92,255,.55); box-shadow: 0 0 22px rgba(139,92,255,.25), inset 0 0 22px rgba(139,92,255,.12);
-    transition: transform .18s, box-shadow .18s, border-color .18s;
+    transition: transform .18s, box-shadow .18s, border-color .18s; transform-style: preserve-3d;
   }
-  a.game:hover, a.game:focus-visible { transform: translateY(-6px) scale(1.02); border-color: var(--cyan); outline: none;
+  .games { perspective: 900px; }
+  a.game:hover, a.game:focus-visible { border-color: var(--cyan); outline: none;
     box-shadow: 0 0 30px rgba(41,240,255,.45), 0 0 60px rgba(255,62,165,.25), inset 0 0 22px rgba(41,240,255,.15); }
   .screen { position: relative; height: 170px; background: #0a0418; border-bottom: 2px solid rgba(139,92,255,.4); }
   .screen canvas { width: 100%; height: 100%; display: block; }
@@ -81,7 +66,6 @@
   .soon .play::before { display: none; }
   footer { position: relative; z-index: 1; text-align: center; margin-top: 40px; font-size: 13px; letter-spacing: 3px; color: #a99ad8; }
 
-  @keyframes grid { to { background-position: 0 60px; } }
   @keyframes blink { 50% { opacity: .35; } }
   @keyframes flicker { 0%, 92%, 100% { opacity: 1; } 93% { opacity: .55; } 94% { opacity: 1; } 96% { opacity: .7; } }
   @media (max-width: 520px) { .wrap { padding-top: 28px; } h1 { letter-spacing: 3px; } .tag { letter-spacing: 3px; font-size: 13px; } }
@@ -89,10 +73,7 @@
 </style>
 </head>
 <body>
-<canvas id="stars" aria-hidden="true"></canvas>
-<div class="sky" aria-hidden="true"></div>
-<div class="sun" aria-hidden="true"></div>
-<div class="floor" aria-hidden="true"></div>
+<canvas id="scene" aria-hidden="true"></canvas>
 
 <div class="wrap">
   <header>
@@ -125,26 +106,6 @@
 <script>
 (() => {
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  // Funkelnder Sternenhimmel
-  const sc = document.getElementById('stars'), sx = sc.getContext('2d');
-  let stars = [];
-  function sizeStars() {
-    const d = Math.min(devicePixelRatio || 1, 2);
-    sc.width = innerWidth * d; sc.height = innerHeight * d; sx.setTransform(d, 0, 0, d, 0, 0);
-    stars = Array.from({ length: Math.round(innerWidth * innerHeight / 5000) }, () => ({
-      x: Math.random() * innerWidth, y: Math.random() * innerHeight * 0.72, r: Math.random() * 1.4 + 0.3, p: Math.random() * 6, s: 0.5 + Math.random() * 1.5,
-    }));
-  }
-  function drawStars(t) {
-    sx.clearRect(0, 0, innerWidth, innerHeight);
-    for (const s of stars) {
-      sx.globalAlpha = 0.35 + 0.65 * Math.abs(Math.sin(t / 1000 * s.s + s.p));
-      sx.fillStyle = '#fff';
-      sx.beginPath(); sx.arc(s.x, s.y, s.r, 0, Math.PI * 2); sx.fill();
-    }
-    sx.globalAlpha = 1;
-  }
 
   // Kleine Neon-Schlange, die in der Snake-Karte Äpfel jagt
   const dc = document.getElementById('snake-demo'), dx = dc.getContext('2d');
@@ -195,15 +156,25 @@
   }
 
   function frame(t) {
-    drawStars(t);
     if (t - last > 140) { last = t; stepSnake(); }
     drawDemo(t);
     if (!still) requestAnimationFrame(frame);
   }
-  addEventListener('resize', () => { sizeStars(); sizeDemo(); if (still) frame(0); });
-  sizeStars(); sizeDemo(); resetSnake();
+  addEventListener('resize', () => { sizeDemo(); if (still) frame(0); });
+  sizeDemo(); resetSnake();
+
+  // Karten kippen in 3D Richtung Maus
+  document.querySelectorAll('a.game').forEach((card) => {
+    card.addEventListener('pointermove', (e) => {
+      const r = card.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5;
+      card.style.transform = `translateY(-6px) rotateX(${(-y * 12).toFixed(2)}deg) rotateY(${(x * 14).toFixed(2)}deg)`;
+    });
+    card.addEventListener('pointerleave', () => { card.style.transform = ''; });
+  });
   requestAnimationFrame(frame);
 })();
 </script>
+<script src="vendor/three.min.js"></script>
+<script src="scene.js"></script>
 </body>
 </html>
