@@ -88,6 +88,11 @@
   .blockprev i { position: absolute; top: -30px; width: 22px; height: 22px; border: 3px solid var(--c); border-radius: 6px;
     box-shadow: 0 0 12px var(--c), 22px 0 0 -3px var(--c); animation: bf 2.4s linear infinite; }
   @keyframes bf { 0% { transform: translateY(0); } 80%, 100% { transform: translateY(150px); opacity: 0; } }
+  .solprev { background: linear-gradient(#0d0520, #2a0d55); overflow: hidden; }
+  .solprev i { position: absolute; top: 34px; width: 52px; height: 74px; border: 3px solid var(--c); border-radius: 8px; background: rgba(13,5,32,.85);
+    box-shadow: 0 0 14px var(--c); transform-origin: 50% 140%; animation: fanc 3s ease-in-out infinite; }
+  .solprev i::after { content: '\2660'; position: absolute; inset: 0; display: grid; place-items: center; color: var(--c); font-size: 26px; text-shadow: 0 0 10px var(--c); }
+  @keyframes fanc { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(var(--r)); } }
   footer { position: relative; z-index: 1; text-align: center; margin-top: 40px; font-size: 13px; letter-spacing: 3px; color: #a99ad8; }
 
   @keyframes blink { 50% { opacity: .35; } }
@@ -136,6 +141,14 @@
       <div class="info">
         <h2>Blockfall</h2>
         <p>Steine drehen, Reihen füllen, Punkte sammeln – mit Vorschau und Halten.</p>
+        <span class="play">SPIELEN</span>
+      </div>
+    </a>
+    <a class="game" href="/solitaire/">
+      <div class="screen solprev"><i style="--c:var(--cyan);--r:-14deg;left:28%"></i><i style="--c:var(--pink);--r:0deg;left:42%"></i><i style="--c:var(--violet);--r:14deg;left:56%"></i></div>
+      <div class="info">
+        <h2>Solitaire</h2>
+        <p>Der Kartenklassiker: Spalten ordnen und alle vier Farben ablegen.</p>
         <span class="play">SPIELEN</span>
       </div>
     </a>

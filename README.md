@@ -8,6 +8,7 @@ Eine Sammlung kleiner Browserspiele. Die Startseite (`index.html`) zeigt alle Sp
 | Flappy Bird | `flug/` |
 | Dino Runner | `dino/` |
 | Blockfall | `block/` |
+| Solitaire | `solitaire/` |
 
 Ein neues Spiel bekommt einen eigenen Ordner und eine Karte auf der Startseite.
 
