@@ -15,6 +15,7 @@ const BOARDS = {
   vier: { max: 100000 },
   fruit: { max: 200000 },
   stack: { max: 20000 },
+  up: { max: 500000 },
   sol1: { low: true, min: 30, max: 36000 },
   sol3: { low: true, min: 30, max: 36000 },
 };

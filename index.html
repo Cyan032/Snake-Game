@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="Arcadia">
 <meta name="description" content="Arcadia – Browserspiele zum Sofort-Losspielen.">
 <title>Arcadia</title>
-<script src="/arcadia.js?v=5"></script>
+<script src="/arcadia.js?v=6"></script>
 <link rel="icon" type="image/png" sizes="64x64" href="/icons/favicon-64.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
@@ -132,6 +132,11 @@
   .stackprev i { position: absolute; left: 50%; width: var(--w); height: 18px; margin-left: calc(var(--w) / -2); border: 3px solid var(--c); border-radius: 6px; box-shadow: 0 0 12px var(--c); }
   .stackprev i.mv { animation: sm 1.8s ease-in-out infinite alternate; }
   @keyframes sm { from { transform: translateX(-70px); } to { transform: translateX(70px); } }
+  .upprev { background: linear-gradient(#0d0520, #2a0d55); overflow: hidden; }
+  .upprev i { position: absolute; width: 60px; height: 10px; border: 3px solid var(--c); border-radius: 6px; box-shadow: 0 0 10px var(--c); }
+  .upprev b { position: absolute; left: calc(20% + 18px); bottom: 44px; width: 20px; height: 20px; border-radius: 50%; background: var(--pink); box-shadow: 0 0 14px var(--pink);
+    animation: ub 1.8s ease-in-out infinite; }
+  @keyframes ub { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(60px, -60px); } 50% { transform: translate(124px, -42px); } 75% { transform: translate(50px, -96px); } }
   footer { position: relative; z-index: 1; text-align: center; margin-top: 40px; font-size: 13px; letter-spacing: 3px; color: #a99ad8; }
 
   @keyframes blink { 50% { opacity: .35; } }
@@ -222,6 +227,14 @@
         <h2>Stack</h2>
         <p>Blöcke im richtigen Moment ablegen und den Turm so hoch wie möglich bauen.</p>
         <span class="play">SPIELEN</span> <span class="rec" data-href="/rekorde/#stack">REKORDE</span>
+      </div>
+    </a>
+    <a class="game" href="/up/">
+      <div class="screen upprev"><i style="left:20%;bottom:30px;--c:var(--violet)"></i><i style="left:56%;bottom:72px;--c:var(--cyan)"></i><i style="left:26%;bottom:114px;--c:var(--violet)"></i><b></b></div>
+      <div class="info">
+        <h2>Only Up</h2>
+        <p>Hüpf von Plattform zu Plattform immer höher – aber nicht alle halten.</p>
+        <span class="play">SPIELEN</span> <span class="rec" data-href="/rekorde/#up">REKORDE</span>
       </div>
     </a>
     <div class="game soon">

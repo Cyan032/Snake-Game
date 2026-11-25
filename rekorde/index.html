@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0d0520">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Rekorde – Arcadia</title>
-<script src="/arcadia.js?v=5"></script>
+<script src="/arcadia.js?v=6"></script>
 <link rel="icon" type="image/png" sizes="64x64" href="/icons/favicon-64.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
@@ -152,6 +152,11 @@
   ], ([st, ramp, size]) => ramp === 1 && size === 1), ' Pkt.',
   '„Wird schneller“ an und Spielfeld Normal. Das Start-Level ist egal, weil höhere Level schneller sind.'));
 
+  // ---------- Only Up ----------
+  card('Only Up', '/up/', comboBlock(combos('up.best.', [
+    ['Abstand', ['Eng', 'Normal', 'Weit']], ['Fiese Plattformen', ['Wenig', 'Normal', 'Viel']],
+  ], ([gap, tr]) => gap >= 1 && tr >= 1), ' m', 'Plattform-Abstand mindestens Normal und fiese Plattformen mindestens Normal.'));
+
   // ---------- Stack ----------
   card('Stack', '/stack/', comboBlock(combos('stack.best.', [
     ['Tempo', ['Langsam', 'Normal', 'Schnell']], ['Schneller', ['Aus', 'An']], ['Perfekt-Bereich', ['Klein', 'Normal', 'Groß']],
@@ -229,7 +234,7 @@
 
   // ---------- Weltweite Bestenliste ----------
   const WB = [['snake-classic', 'Snake Klassisch', ''], ['snake-park', 'Snake Parkour', ' ★'], ['flug', 'Flappy Bird', ' Pkt.'], ['dino', 'Dino Runner', ' m'],
-    ['block', 'Blockfall', ' Pkt.'], ['fruit', 'Fruit Drop', ' Pkt.'], ['stack', 'Stack', ' Blöcke'], ['vier', 'Vier in Reihe', ' Siege'], ['sol1', 'Solitaire (1)', 't'], ['sol3', 'Solitaire (3)', 't']];
+    ['block', 'Blockfall', ' Pkt.'], ['fruit', 'Fruit Drop', ' Pkt.'], ['stack', 'Stack', ' Blöcke'], ['up', 'Only Up', ' m'], ['vier', 'Vier in Reihe', ' Siege'], ['sol1', 'Solitaire (1)', 't'], ['sol3', 'Solitaire (3)', 't']];
   let wdata = null, wsel = 'snake-classic';
   try { wsel = sessionStorage.getItem('rek.welt') || wsel; } catch (e) {}
   function wrender() {
@@ -257,7 +262,7 @@
     const del = [];
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
-      if (/^(snake\.(best|fair)\.|snake\.park$|flug\.best\.|dino\.best\.|block\.best\.|fruit\.best\.|stack\.best\.|sol\.stats$|vier\.stats$|ttt\.stats$)/.test(k)) del.push(k);
+      if (/^(snake\.(best|fair)\.|snake\.park$|flug\.best\.|dino\.best\.|block\.best\.|fruit\.best\.|stack\.best\.|up\.best\.|sol\.stats$|vier\.stats$|ttt\.stats$)/.test(k)) del.push(k);
     }
     del.forEach((k) => localStorage.removeItem(k)); location.reload();
   };

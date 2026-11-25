@@ -13,6 +13,7 @@ Eine Sammlung kleiner Browserspiele. Die Startseite (`index.html`) zeigt alle Sp
 | Tic Tac Toe | `ttt/` |
 | Fruit Drop | `fruit/` |
 | Stack | `stack/` |
+| Only Up | `up/` |
 
 Die Seite `rekorde/` zeigt die Rekorde aller Spiele. Als Rekord zählt nur, was mit fairen Einstellungen geschafft wurde.
 
