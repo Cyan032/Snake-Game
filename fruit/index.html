@@ -175,7 +175,7 @@
     const g = v('grav');
     for (const f of fruits) {
       f.vy += g * dt;
-      f.vx *= 0.995; f.vy *= 0.999;
+      f.vx *= 0.9995;
       f.x += f.vx * dt; f.y += f.vy * dt;
       if (f.grow < 1) f.grow = Math.min(1, f.grow + dt * 7);
     }
@@ -186,7 +186,7 @@
         // Wände und Boden
         if (a.x < ra) { a.x = ra; if (a.vx < 0) a.vx *= -0.2; }
         if (a.x > BW - ra) { a.x = BW - ra; if (a.vx > 0) a.vx *= -0.2; }
-        if (a.y > H - ra) { a.y = H - ra; if (a.vy > 0) a.vy *= -0.15; a.vx *= 0.96; }
+        if (a.y > H - ra) { a.y = H - ra; if (a.vy > 0) a.vy *= -0.1; if (it === 0) a.vx *= 0.985; }
         for (let j = i + 1; j < fruits.length; j++) {
           const b = fruits[j], rb = FRUITS[b.k].r * b.grow;
           let dx = b.x - a.x, dy = b.y - a.y; const d2 = dx * dx + dy * dy, rs = ra + rb;
@@ -197,11 +197,12 @@
           const ma = ra * ra, mb = rb * rb, over_ = rs - d, pa = mb / (ma + mb), pb = ma / (ma + mb);
           a.x -= dx * over_ * pa; a.y -= dy * over_ * pa; b.x += dx * over_ * pb; b.y += dy * over_ * pb;
           const rv = (b.vx - a.vx) * dx + (b.vy - a.vy) * dy;
-          if (rv < 0) {
-            const j_ = -(1.15) * rv / (1 / ma + 1 / mb);
+          // Abprallen nur einmal pro Teilschritt, sonst bremst es sich gegenseitig fest
+          if (it === 0 && rv < 0) {
+            const j_ = -(1.12) * rv / (1 / ma + 1 / mb);
             a.vx -= j_ * dx / ma; a.vy -= j_ * dy / ma; b.vx += j_ * dx / mb; b.vy += j_ * dy / mb;
             // etwas Reibung entlang der Berührung
-            const tx = -dy, ty = dx, rt = (b.vx - a.vx) * tx + (b.vy - a.vy) * ty, f_ = rt * 0.08;
+            const tx = -dy, ty = dx, rt = (b.vx - a.vx) * tx + (b.vy - a.vy) * ty, f_ = rt * 0.015;
             a.vx += tx * f_ * pa; a.vy += ty * f_ * pa; b.vx -= tx * f_ * pb; b.vy -= ty * f_ * pb;
           }
         }
