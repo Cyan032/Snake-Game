@@ -21,6 +21,8 @@ Konten und die weltweite Bestenliste laufen über `api/arcadia.js` (Vercel-Funkt
 
 Jede Runde gibt Erfahrungspunkte (XP), daraus ergibt sich das Level (Level L ab 50·L·(L−1) XP). Ohne Konto bleibt das Level im Browser, beim Registrieren wird es mitgenommen.
 
+Mit Konto werden Fortschritt, Rekorde und Statistiken aller Spiele als Cloud-Spielstand gespeichert und zwischen Geräten zusammengeführt (es gewinnt immer das Bessere). Einstellungen bleiben pro Gerät.
+
 Arcadia ist als App installierbar (`manifest.webmanifest`) und dank `sw.js` auch offline spielbar. Seiten kommen immer zuerst frisch aus dem Netz, nur ohne Verbindung aus dem Speicher.
 
 Ein neues Spiel bekommt einen eigenen Ordner und eine Karte auf der Startseite.

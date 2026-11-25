@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0d0520">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Rekorde – Arcadia</title>
-<script src="/arcadia.js?v=7"></script>
+<script src="/arcadia.js?v=8"></script>
 <link rel="icon" type="image/png" sizes="64x64" href="/icons/favicon-64.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
 <link rel="manifest" href="/manifest.webmanifest">
@@ -214,6 +214,7 @@
     }
     el.innerHTML = `<div class="head"><h2>Mein Konto</h2></div>
       <div class="big">${tile('Name', esc(A.name))}${tile('Level ' + A.levelOf(A.xpTotal), A.xpTotal + ' XP', 'Nächstes Level ab ' + A.xpFor(A.levelOf(A.xpTotal) + 1) + ' XP')}</div>
+      <p class="note" style="margin-top:0">☁ Dein Fortschritt aller Spiele (Rekorde, Parkour, Statistiken) wird automatisch mit dem Konto gespeichert. Einstellungen bleiben pro Gerät.</p>
       <p class="note" style="margin-top:0">Dein Code (zum Anmelden auf anderen Geräten):</p>
       <div class="krow"><span class="kcode hide" id="k-code">${A.fmtCode(A.code)}</span>
         <button class="kbtn" id="k-show">Zeigen</button><button class="kbtn" id="k-copy">Kopieren</button></div>
@@ -257,6 +258,8 @@
   }
   wrender(); welt(true);
   addEventListener('arcadia:account', () => { konto(); welt(true); });
+  // Neuer Spielstand aus der Cloud: Seite einmal neu aufbauen
+  addEventListener('arcadia:save', () => location.reload());
   if (location.hash) { const t = document.querySelector(location.hash); if (t) { t.scrollIntoView(); t.style.borderColor = 'var(--cyan)'; t.style.boxShadow = '0 0 30px rgba(41,240,255,.4)'; } }
   document.getElementById('reset').onclick = () => {
     if (!confirm('Wirklich alle Rekorde aller Spiele löschen? Einstellungen bleiben erhalten.')) return;

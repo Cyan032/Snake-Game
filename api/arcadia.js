@@ -23,6 +23,42 @@ for (const m of SNAKE_MODES) BOARDS['snake-' + m] = { max: 5000 };
 
 const BAD = ['arsch', 'fick', 'fuck', 'hure', 'nazi', 'hitler', 'nigg', 'neger', 'schwuchtel', 'fotze', 'wichs', 'bitch', 'cunt', 'dick', 'penis', 'vagina', 'sex', 'porn', 'kanake', 'spast', 'missgeburt', 'shit', 'scheiss', 'scheiß', 'hurensohn', 'whore', 'slut', 'faggot', 'retard', 'kkk', 'heil'];
 
+// Cloud-Spielstand: erlaubte Schlüssel und Zusammenführen (es gewinnt immer das Bessere)
+const SAVE_RX = /^(snake\.(best|fair)\.[a-z]+$|snake\.park$|(flug|dino|block|fruit|stack|up)\.best\.\d+$|(sol|vier|ttt)\.stats$)/;
+const num = (x) => (Number.isFinite(+x) ? Math.max(0, +x) : 0);
+function mergeVal(k, a, b) {
+  if (a === undefined || a === null) return clean(k, b); if (b === undefined || b === null) return clean(k, a);
+  a = clean(k, a); b = clean(k, b);
+  if (k === 'snake.park') {
+    const o = { ...a };
+    for (const id in b) { const x = o[id], y = b[id]; o[id] = !x ? y : { t: Math.min(x.t, y.t), s: Math.max(x.s, y.s) }; }
+    return o;
+  }
+  if (k === 'sol.stats') {
+    const lo = (x, y) => (x && y ? Math.min(x, y) : x || y || 0);
+    return { wins: Math.max(a.wins, b.wins), best1: lo(a.best1, b.best1), best3: lo(a.best3, b.best3) };
+  }
+  if (k === 'vier.stats' || k === 'ttt.stats') {
+    const o = { ...a };
+    for (const x in b) { const p = o[x] || { w: 0, l: 0, d: 0 }, q = b[x]; o[x] = { w: Math.max(p.w, q.w), l: Math.max(p.l, q.l), d: Math.max(p.d, q.d) }; }
+    return o;
+  }
+  return Math.max(a, b);
+}
+// Nur erwartete Formen übernehmen, damit niemand Müll speichern kann
+function clean(k, v) {
+  if (k === 'snake.park') {
+    const o = {}; if (v && typeof v === 'object') for (const id of Object.keys(v).slice(0, 100)) if (/^[a-z0-9]{1,8}$/.test(id) && v[id]) o[id] = { t: num(v[id].t), s: Math.min(5, num(v[id].s)) };
+    return o;
+  }
+  if (k === 'sol.stats') return { wins: num(v && v.wins), best1: num(v && v.best1), best3: num(v && v.best3) };
+  if (k === 'vier.stats' || k === 'ttt.stats') {
+    const o = {}; if (v && typeof v === 'object') for (const x of Object.keys(v).slice(0, 30)) if (/^k\d(s\d)?$/.test(x) && v[x]) o[x] = { w: num(v[x].w), l: num(v[x].l), d: num(v[x].d) };
+    return o;
+  }
+  return num(v);
+}
+
 async function redis(cmds) {
   const r = await fetch(URL_ + '/pipeline', {
     method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN, 'Content-Type': 'application/json' }, body: JSON.stringify(cmds),
@@ -118,6 +154,18 @@ module.exports = async (req, res) => {
       if (!n) return send(400, { error: 'Dieser Name geht nicht.' });
       await redis([['HSET', 'u:' + uid, 'name', n], ['HSET', 'names', uid, n]]);
       return send(200, { name: n });
+    }
+    if (action === 'save') {
+      const incoming = b.data && typeof b.data === 'object' ? b.data : {};
+      if (JSON.stringify(incoming).length > 60000) return send(413, { error: 'Spielstand zu groß.' });
+      if (await limited('rlsave:' + uid, 20, 60)) return send(429, { error: 'Zu oft gespeichert.' });
+      const [raw] = await redis([['HGET', 'u:' + uid, 'save']]);
+      let stored = {}; try { stored = JSON.parse(raw || '{}'); } catch (e) {}
+      const merged = {};
+      for (const k of new Set([...Object.keys(stored), ...Object.keys(incoming)])) if (SAVE_RX.test(k)) merged[k] = mergeVal(k, stored[k], incoming[k]);
+      const out = JSON.stringify(merged);
+      if (out !== raw) await redis([['HSET', 'u:' + uid, 'save', out]]);
+      return send(200, { data: merged });
     }
     if (action === 'xp') {
       const n = Math.floor(Number(b.n) || 0);

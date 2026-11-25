@@ -69,12 +69,14 @@
       const j = await api({ action: 'register', name: name || randomName(), xp: get('arcadia.xp', 0) });
       put('arcadia.code', j.code); put('arcadia.name', j.name); put('arcadia.id', j.id); put('arcadia.sent', {});
       put('arcadia.xp', j.xp || 0); put('arcadia.xpq', 0); showLevel();
+      await A.cloud().catch(() => {});
       return j;
     },
     async login(code) {
       const j = await api({ action: 'login', code });
       put('arcadia.code', String(code).replace(/\D/g, '')); put('arcadia.name', j.name); put('arcadia.id', j.id); put('arcadia.sent', j.scores || {});
       put('arcadia.xp', j.xp || 0); put('arcadia.xpq', 0); showLevel();
+      await A.cloud().catch(() => {});
       await A.sync(true);
       return j;
     },
@@ -162,14 +164,72 @@
   }
 
   // Wenn ein Spiel einen Rekord speichert, kurz danach automatisch hochladen
-  let timer = 0;
+  // ---------- Cloud-Spielstand ----------
+  // Fortschritt, Rekorde und Statistiken aller Spiele werden mit dem Konto gespeichert und zusammengeführt.
+  // Einstellungen (Farbe, Welt, Steuerung …) bleiben bewusst pro Gerät.
+  const SAVE_RX = /^(snake\.(best|fair)\.[a-z]+$|snake\.park$|(flug|dino|block|fruit|stack|up)\.best\.\d+$|(sol|vier|ttt)\.stats$)/;
+  const origSet = Storage.prototype.setItem;
+  function collect() {
+    const out = {};
+    try { for (let i = 0; i < LS.length; i++) { const k = LS.key(i); if (k && SAVE_RX.test(k)) { try { out[k] = JSON.parse(LS.getItem(k)); } catch (e) {} } } } catch (e) {}
+    return out;
+  }
+  // Gleiche Regeln wie auf dem Server: es gewinnt immer das Bessere
+  function mergeVal(k, a, b) {
+    if (a === undefined || a === null) return b; if (b === undefined || b === null) return a;
+    if (k === 'snake.park') {
+      const o = { ...a };
+      for (const id in b) { const x = o[id], y = b[id]; o[id] = !x ? y : { t: Math.min(x.t, y.t), s: Math.max(x.s, y.s) }; }
+      return o;
+    }
+    if (k === 'sol.stats') {
+      const lo = (x, y) => (x && y ? Math.min(x, y) : x || y || 0);
+      return { ...a, ...b, wins: Math.max(a.wins || 0, b.wins || 0), best1: lo(a.best1, b.best1), best3: lo(a.best3, b.best3) };
+    }
+    if (k === 'vier.stats' || k === 'ttt.stats') {
+      const o = { ...a };
+      for (const x in b) { const p = o[x] || {}, q = b[x]; o[x] = { w: Math.max(p.w || 0, q.w || 0), l: Math.max(p.l || 0, q.l || 0), d: Math.max(p.d || 0, q.d || 0) }; }
+      return o;
+    }
+    return Math.max(+a || 0, +b || 0);
+  }
+  function apply(data) {
+    let changed = false;
+    for (const k in data) {
+      if (!SAVE_RX.test(k)) continue;
+      let cur; try { cur = JSON.parse(LS.getItem(k)); } catch (e) { cur = undefined; }
+      const m = mergeVal(k, cur === null ? undefined : cur, data[k]);
+      if (JSON.stringify(m) !== JSON.stringify(cur)) { try { origSet.call(LS, k, JSON.stringify(m)); changed = true; } catch (e) {} }
+    }
+    if (changed) dispatchEvent(new Event('arcadia:save'));
+    return changed;
+  }
+  let cloudBusy = null;
+  A.cloud = async function () {
+    if (!A.code) return;
+    if (cloudBusy) return cloudBusy;
+    cloudBusy = (async () => {
+      const j = await api({ action: 'save', code: A.code, data: collect() });
+      if (j.data) apply(j.data);
+      put('arcadia.cloudAt', Date.now());
+    })().finally(() => { cloudBusy = null; });
+    return cloudBusy;
+  };
+
+  // Wenn ein Spiel etwas speichert: kurz danach Rekorde hochladen und den Spielstand sichern
+  let timer = 0, cloudTimer = 0;
   const RX = /^(snake\.fair\.|snake\.park$|flug\.best\.|dino\.best\.|block\.best\.|fruit\.best\.|stack\.best\.|up\.best\.|sol\.stats$|vier\.stats$)/;
   const plan = () => { clearTimeout(timer); timer = setTimeout(() => A.sync().catch(() => {}), 1500); };
+  const planCloud = () => { clearTimeout(cloudTimer); cloudTimer = setTimeout(() => A.cloud().catch(() => {}), 4000); };
   try {
-    const orig = Storage.prototype.setItem;
-    Storage.prototype.setItem = function (k, v) { orig.call(this, k, v); if (this === LS && RX.test(k)) plan(); };
+    Storage.prototype.setItem = function (k, v) {
+      origSet.call(this, k, v);
+      if (this !== LS) return;
+      if (RX.test(k)) plan();
+      if (SAVE_RX.test(k)) planCloud();
+    };
   } catch (e) {}
-  addEventListener('load', plan);
+  addEventListener('load', () => { plan(); A.cloud().catch(() => {}); });
 
   // ---------- Begrüßung: Registrieren oder Anmelden ----------
   const CSS = `
