@@ -80,6 +80,7 @@
     <div class="row"><label>Hindernisse</label><div class="seg" data-s="density"></div></div>
     <div class="row"><label>Sprungkraft</label><div class="seg" data-s="jump"></div></div>
     <div class="row"><label>Bienen (ducken!)</label><div class="seg" data-s="bees"></div></div>
+    <div class="row"><label>Design</label><div class="seg" data-s="style"></div></div>
     <div class="row"><label>Welt</label><div class="seg" data-s="world"></div></div>
     <div class="row"><label>Farbe</label><div class="seg colors" data-s="color"></div></div>
     <div class="actions">
@@ -102,6 +103,7 @@
     density: { label: ['Wenig', 'Normal', 'Viel'], val: [1.35, 1, 0.75], def: 1 },
     jump:    { label: ['Niedrig', 'Normal', 'Hoch'], val: [0.88, 1, 1.12], def: 1 },
     bees:    { label: ['Aus', 'An'], val: [0, 1], def: 1 },
+    style:   { label: ['Bunt', 'Retro (schwarz-weiß)'], val: [0, 1], def: 0 },
     world:   { label: ['Wiese', 'Wüste', 'Schnee', 'Nacht'], val: ['meadow', 'desert', 'snow', 'night'], def: 0 },
     color:   { label: ['', '', '', '', '', ''], val: ['#43a047', '#4e7cf6', '#ef4f8b', '#f58a1f', '#9a5cf0', '#14b8a6'], def: 0 },
   };
@@ -111,6 +113,10 @@
     snow:   { grass: ['#f3f8fc', '#e5eff6'], frame: '#8fb6d1', hud: '#5d8db0', page: ['#d7ebf7', '#86afcd', '#557f9f'], rock: '#7f9db3', rockTop: '#d2edfa', bush: '#2f6b4a', bushTop: '#e9f5fb', ground: '#5d8db0', groundTop: '#d2edfa' },
     night:  { grass: ['#2f4b2b', '#2a4427'], frame: '#1d321a', hud: '#152613', page: ['#2a462c', '#132414', '#070f08'], rock: '#4d554a', rockTop: '#6a7466', bush: '#1f3a1a', bushTop: '#30562a', ground: '#152613', groundTop: '#30562a' },
   };
+  const RETRO = { grass: ['#fff', '#fff'], frame: '#d8d8d8', hud: '#535353', page: ['#fafafa', '#ececec', '#d6d6d6'],
+    rock: '#535353', rockTop: '#535353', bush: '#535353', bushTop: '#535353', ground: '#fff', groundTop: '#535353' };
+  const retro = () => v('style') === 1;
+  const W = () => retro() ? RETRO : WORLDS[v('world')];
   const set = {};
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem('dino.settings') || '{}'); } catch (e) {}
@@ -146,7 +152,7 @@
     draw();
   }
   function applyWorld() {
-    const w = WORLDS[v('world')];
+    const w = W();
     $('hud').style.background = w.hud; $('frame').style.background = w.frame;
     document.body.style.background = `radial-gradient(120% 90% at 50% 0%, ${w.page[0]} 0%, ${w.page[1]} 55%, ${w.page[2]} 100%) fixed ${w.page[1]}`;
     document.querySelector('meta[name=theme-color]').content = w.hud;
@@ -307,7 +313,7 @@
   function circle(x, y, r) { ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); }
 
   function drawDino(c) {
-    const col = v('color'), dk = shade(col, 0.72), x = DX * c, y = dino.y * c;
+    const col = retro() ? '#535353' : v('color'), dk = retro() ? '#535353' : shade(col, 0.72), x = DX * c, y = dino.y * c;
     const run = state === 'play' && dino.ground ? Math.sin(t * 22) : 0;
     ctx.save(); ctx.translate(x, y);
     // Schatten
@@ -321,7 +327,7 @@
       ctx.beginPath(); ctx.moveTo(-c * 0.55, -c * 0.5); ctx.quadraticCurveTo(-c * 1.1, -c * 0.4, -c * 1.05, -c * 0.3); ctx.quadraticCurveTo(-c * 0.7, -c * 0.25, -c * 0.4, -c * 0.25); ctx.fill();
       ctx.beginPath(); ctx.ellipse(-c * 0.05, -c * 0.45, c * 0.6, c * 0.3, 0, 0, 7); ctx.fill();
       ctx.beginPath(); ctx.ellipse(c * 0.6, -c * 0.5, c * 0.38, c * 0.27, 0, 0, 7); ctx.fill();
-      ctx.fillStyle = 'rgba(255,255,255,.45)'; ctx.beginPath(); ctx.ellipse(0, -c * 0.3, c * 0.4, c * 0.12, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = retro() ? 'rgba(0,0,0,0)' : 'rgba(255,255,255,.45)'; ctx.beginPath(); ctx.ellipse(0, -c * 0.3, c * 0.4, c * 0.12, 0, 0, 7); ctx.fill();
       ctx.fillStyle = dk; for (const sx of [-0.45, -0.15, 0.15]) { ctx.beginPath(); ctx.moveTo(sx * c - c * 0.1, -c * 0.72); ctx.lineTo(sx * c, -c * 0.88); ctx.lineTo(sx * c + c * 0.1, -c * 0.72); ctx.fill(); }
       ctx.fillStyle = '#fff'; circle(c * 0.7, -c * 0.6, c * 0.1); ctx.fillStyle = '#1b1b1b'; circle(c * 0.73, -c * 0.6, c * 0.05);
     } else {
@@ -339,7 +345,7 @@
       rr(c * 0.05, -c * 1.45, c * 0.38, c * 0.6, c * 0.18); ctx.fill();
       ctx.beginPath(); ctx.ellipse(c * 0.42, -c * 1.5, c * 0.42, c * 0.3, 0, 0, 7); ctx.fill();
       // Bauch
-      ctx.fillStyle = 'rgba(255,255,255,.45)'; ctx.beginPath(); ctx.ellipse(c * 0.1, -c * 0.62, c * 0.26, c * 0.24, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = retro() ? 'rgba(0,0,0,0)' : 'rgba(255,255,255,.45)'; ctx.beginPath(); ctx.ellipse(c * 0.1, -c * 0.62, c * 0.26, c * 0.24, 0, 0, 7); ctx.fill();
       // Rückenzacken
       ctx.fillStyle = dk;
       for (const [sx, sy] of [[-0.42, -0.95], [-0.2, -1.12], [0.05, -1.55]]) { ctx.beginPath(); ctx.moveTo(sx * c - c * 0.1, sy * c + c * 0.06); ctx.lineTo(sx * c - c * 0.05, sy * c - c * 0.14); ctx.lineTo(sx * c + c * 0.1, sy * c + c * 0.02); ctx.fill(); }
@@ -350,7 +356,7 @@
       ctx.fillStyle = '#fff'; circle(c * 0.48, -c * 1.6, c * 0.12);
       ctx.fillStyle = '#1b1b1b'; circle(c * 0.52, -c * 1.6, c * 0.06);
       if (state === 'over') { ctx.strokeStyle = '#1b1b1b'; ctx.lineWidth = c * 0.04; ctx.beginPath(); ctx.moveTo(c * 0.4, -c * 1.7); ctx.lineTo(c * 0.58, -c * 1.5); ctx.moveTo(c * 0.58, -c * 1.7); ctx.lineTo(c * 0.4, -c * 1.5); ctx.stroke(); }
-      ctx.fillStyle = 'rgba(255,120,150,.45)'; circle(c * 0.55, -c * 1.38, c * 0.06);
+      ctx.fillStyle = retro() ? 'rgba(0,0,0,0)' : 'rgba(255,120,150,.45)'; circle(c * 0.55, -c * 1.38, c * 0.06);
       ctx.fillStyle = dk; circle(c * 0.78, -c * 1.56, c * 0.03);
       ctx.strokeStyle = dk; ctx.lineWidth = c * 0.035; ctx.beginPath(); ctx.moveTo(c * 0.6, -c * 1.38); ctx.quadraticCurveTo(c * 0.72, -c * 1.33, c * 0.8, -c * 1.42); ctx.stroke();
     }
@@ -372,15 +378,15 @@
       const n = Math.round(o.h * 2.2);
       for (let i = 0; i < n; i++) circle(x + ow * (0.3 + 0.4 * (i % 2)), y + c * 0.3 + i * (oh - c * 0.5) / n, c * 0.32);
       ctx.fillStyle = w.bushTop; circle(x + ow * 0.42, y + c * 0.25, c * 0.14);
-      ctx.fillStyle = '#e53935'; circle(x + ow * 0.68, y + oh * 0.5, c * 0.07); circle(x + ow * 0.3, y + oh * 0.72, c * 0.07);
+      ctx.fillStyle = retro() ? '#fff' : '#e53935'; circle(x + ow * 0.68, y + oh * 0.5, c * 0.07); circle(x + ow * 0.3, y + oh * 0.72, c * 0.07);
     } else {
       // Biene
       const by = y + oh / 2 + Math.sin(t * 6 + o.x) * c * 0.12, bx = x + ow / 2;
-      ctx.fillStyle = 'rgba(255,255,255,.75)';
+      ctx.fillStyle = retro() ? '#c4c4c4' : 'rgba(255,255,255,.75)';
       const wf = Math.sin(t * 40) * 0.3;
       ctx.beginPath(); ctx.ellipse(bx + c * 0.05, by - c * 0.28, c * 0.2, c * 0.12, -0.5 + wf, 0, 7); ctx.fill();
       ctx.beginPath(); ctx.ellipse(bx + c * 0.25, by - c * 0.25, c * 0.16, c * 0.1, 0.4 - wf, 0, 7); ctx.fill();
-      ctx.fillStyle = '#f9c02d'; ctx.beginPath(); ctx.ellipse(bx, by, c * 0.42, c * 0.28, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = retro() ? '#9a9a9a' : '#f9c02d'; ctx.beginPath(); ctx.ellipse(bx, by, c * 0.42, c * 0.28, 0, 0, 7); ctx.fill();
       ctx.save(); ctx.beginPath(); ctx.ellipse(bx, by, c * 0.42, c * 0.28, 0, 0, 7); ctx.clip();
       ctx.fillStyle = '#2b2b2b'; ctx.fillRect(bx - c * 0.05, by - c * 0.3, c * 0.12, c * 0.6); ctx.fillRect(bx + c * 0.18, by - c * 0.3, c * 0.1, c * 0.6);
       ctx.restore();
@@ -391,7 +397,7 @@
 
   function draw() {
     if (!dino) return;
-    const w = WORLDS[v('world')], c = cell;
+    const w = W(), c = cell;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     if (shake) ctx.translate((Math.random() - 0.5) * shake * 14, (Math.random() - 0.5) * shake * 14);
     // Rasen im Schachbrettmuster, scrollt mit
@@ -399,14 +405,28 @@
     for (let y = 0; y < GROUND; y++) for (let x = -2; x < COLS + 2; x++) {
       ctx.fillStyle = w.grass[(x + y + 200) & 1]; ctx.fillRect((x - off) * c, y * c, c + 1, c + 1);
     }
-    // Boden
     const gy = GROUND * c;
+    if (retro()) {
+      ctx.fillStyle = '#fff'; ctx.fillRect(0, gy, COLS * c, ROWS * c - gy);
+      ctx.fillStyle = '#d2d2d2';
+      for (let i = 0; i < 4; i++) {
+        const cx = ((i * 7.3 - scroll * 0.25) % (COLS + 6) + COLS + 6) % (COLS + 6) - 3, cy = 1.2 + (i % 3) * 1.3;
+        rr(cx * c, cy * c, c * 1.6, c * 0.35, c * 0.18); ctx.fill(); rr((cx + 0.4) * c, (cy - 0.25) * c, c * 0.8, c * 0.4, c * 0.2); ctx.fill();
+      }
+      ctx.fillStyle = '#535353'; ctx.fillRect(0, gy - c * 0.04, COLS * c, Math.max(1.5, c * 0.06));
+      for (let i = 0; i < 40; i++) {
+        const px = ((i * 2.37 - scroll) % (COLS + 2) + COLS + 2) % (COLS + 2) - 1;
+        ctx.fillRect(px * c, gy + c * (0.25 + (i * 37 % 7) * 0.12), c * (0.1 + (i % 3) * 0.08), Math.max(1, c * 0.05));
+      }
+    } else {
+    // Boden
     ctx.fillStyle = w.ground; ctx.fillRect(0, gy, COLS * c, ROWS * c - gy);
     ctx.fillStyle = w.groundTop;
     const go = (scroll * c) % c;
     for (let x = -go; x < COLS * c + c; x += c) { rr(x + 2, gy, c - 4, c * 0.3, c * 0.12); ctx.fill(); }
     ctx.fillStyle = 'rgba(0,0,0,.12)';
     for (let x = -((scroll * c * 1) % (c * 3)); x < COLS * c; x += c * 3) { circle(x + c * 0.7, gy + c * 0.9, c * 0.08); circle(x + c * 2.1, gy + c * 1.4, c * 0.06); }
+    }
 
     for (const o of obs) drawObstacle(o, w, c);
     for (const p of parts) { ctx.globalAlpha = p.life / 0.35; ctx.fillStyle = w.groundTop; circle(p.x * c, p.y * c, c * 0.08); }
