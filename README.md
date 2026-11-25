@@ -43,7 +43,7 @@ Nach einem Crash geht es am letzten Checkpoint 🚩 weiter.
 
 Folgende Elemente kommen in den Leveln vor:
 - Türen, die im Takt auf- und zugehen (blau und lila wechseln sich ab)
-- Schlüssel 🔑, der goldene Schlösser öffnet
+- ein Schlüssel, der goldene Schlösser öffnet
 - Portale
 - Kreissägen, die auf sichtbaren Schienen hin und her fahren
 - Checkpoints
@@ -55,7 +55,7 @@ Die Level stehen in `snake/levels.js`. Am Anfang der Datei steht eine Zeichen-Le
 - **Spiel:** Tempo, Spielfeld (Klein bis Riesig), Anzahl der Äpfel (1–10), Goldäpfel (3 Punkte, verschwinden nach kurzer Zeit), Stärke der KI
 - **Welt:** Wiese, Wüste, Schnee, Nacht, Vulkan, Weltraum
 - **Karte:** Offen, Kreuz, Ecken, Säulen, Räume, Tunnel, Zufall
-- **Schlange:** 7 Farben, Muster (Uni, Streifen, Punkte, Regenbogen) und Extras (Sonnenbrille, Krone, Schleife)
+- **Schlange:** 7 Farben, Muster (Uni, Streifen, Punkte, Regenbogen)
 
 Jeder Modus speichert seinen eigenen Rekord im Browser.
 
