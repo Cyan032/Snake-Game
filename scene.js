@@ -22,6 +22,7 @@
   const ground = new THREE.Mesh(
     new THREE.PlaneGeometry(160, 220, 160, 220),
     new THREE.ShaderMaterial({
+      extensions: { derivatives: true },
       uniforms: { uTime: { value: 0 }, uFogColor: { value: new THREE.Color(BG) } },
       vertexShader: `
         uniform float uTime;
@@ -35,8 +36,12 @@
           return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
         }
         void main() {
+          // Vorwärtsflug: Die Landschaft rückt in ganzen Gitterschritten weiter (feste Berghöhen)
+          // und gleitet dazwischen weich – so zittern die Gipfel nicht.
+          float s = uTime * 6.0, si = floor(s);
           vec3 p = position;                       // Ebene liegt in x/y, wird unten flach gedreht
-          float z = p.y + uTime * 6.0;             // Vorwärtsflug
+          p.y -= s - si;
+          float z = position.y + si;
           float side = smoothstep(7.0, 26.0, abs(p.x));
           float h = (noise(vec2(p.x * 0.12, z * 0.12)) * 0.7 + noise(vec2(p.x * 0.35, z * 0.35)) * 0.3);
           p.z = h * side * 22.0;
@@ -51,13 +56,13 @@
         varying vec2 vPos;
         varying float vH;
         varying float vDepth;
-        float gridLine(float v, float w) {
-          float d = abs(fract(v) - 0.5);
-          return smoothstep(0.5 - w, 0.5, d);
+        // Linien in Bildschirm-Pixeln: immer scharf, egal wie nah oder steil
+        float gridLine(float v) {
+          float d = (0.5 - abs(fract(v) - 0.5)) / max(fwidth(v), 1e-4);
+          return 1.0 - smoothstep(0.6, 1.6, d);
         }
         void main() {
-          float w = clamp(0.012 * vDepth, 0.025, 0.12);
-          float g = max(gridLine(vPos.x / 2.0, w), gridLine(vPos.y / 2.0, w));
+          float g = max(gridLine(vPos.x / 2.0), gridLine(vPos.y / 2.0));
           vec3 base = mix(vec3(0.05, 0.01, 0.12), vec3(0.12, 0.03, 0.22), vH);
           vec3 line = mix(vec3(1.0, 0.24, 0.65), vec3(0.16, 0.94, 1.0), smoothstep(0.15, 0.6, vH));
           vec3 col = mix(base, line, g);
@@ -129,7 +134,7 @@
 
   function resize() {
     const w = innerWidth, h = innerHeight;
-    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, w < 700 ? 1.5 : 1.75));
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.fov = w / h < 0.8 ? 75 : 62;
