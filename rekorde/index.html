@@ -162,6 +162,18 @@
     card('Vier in Reihe', '/vier/', h);
   }
 
+  // ---------- Tic Tac Toe ----------
+  {
+    const s = get('ttt.stats', {}), L = ['', 'Leicht', 'Mittel', 'Unschlagbar'], F = ['3×3', '4×4', '5×5'];
+    const rows = [];
+    for (let o = 1; o <= 3; o++) for (let z = 0; z < 3; z++) { const x = s['k' + o + 's' + z]; if (x) rows.push(`<tr><td>${L[o]} <span class="n">${F[z]}</span></td><td><span class="n">${x.w} S · ${x.l} N · ${x.d} U</span></td></tr>`); }
+    const u = s.k3s0 || { w: 0, l: 0, d: 0 };
+    let h = `<div class="big">${tile('Gegen Unschlagbar (3×3)', u.d + u.w, 'nicht verloren (Unentschieden zählt)')}</div>`;
+    h += rows.length ? `<table>${rows.join('')}</table>` : `<p class="none">Noch keine Spiele gegen die KI.</p>`;
+    h += `<p class="note">Die KI „Unschlagbar“ macht auf 3×3 keine Fehler – ein Unentschieden ist dort das Beste, was geht.</p>`;
+    card('Tic Tac Toe', '/ttt/', h);
+  }
+
   // ---------- Solitaire ----------
   {
     const s = get('sol.stats', {});
@@ -235,7 +247,7 @@
     const del = [];
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
-      if (/^(snake\.(best|fair)\.|snake\.park$|flug\.best\.|dino\.best\.|block\.best\.|sol\.stats$|vier\.stats$)/.test(k)) del.push(k);
+      if (/^(snake\.(best|fair)\.|snake\.park$|flug\.best\.|dino\.best\.|block\.best\.|sol\.stats$|vier\.stats$|ttt\.stats$)/.test(k)) del.push(k);
     }
     del.forEach((k) => localStorage.removeItem(k)); location.reload();
   };

@@ -115,6 +115,15 @@
       radial-gradient(circle, rgba(139,92,255,.35) 9px, transparent 10px) 12px 2px / 25px 25px;
     animation: vp 2.4s ease-in-out infinite; }
   @keyframes vp { 50% { box-shadow: 0 0 26px var(--pink); border-color: var(--pink); } }
+  .tttprev { background: linear-gradient(#0d0520, #2a0d55); overflow: hidden; display: grid; place-items: center; }
+  .tttprev span { position: relative; width: 114px; height: 114px;
+    background: linear-gradient(var(--violet), var(--violet)) 37px 0 / 3px 100% no-repeat, linear-gradient(var(--violet), var(--violet)) 74px 0 / 3px 100% no-repeat,
+      linear-gradient(var(--violet), var(--violet)) 0 37px / 100% 3px no-repeat, linear-gradient(var(--violet), var(--violet)) 0 74px / 100% 3px no-repeat;
+    filter: drop-shadow(0 0 6px var(--violet)); }
+  .tttprev span::before { content: '\2715'; position: absolute; left: 6px; top: 0; font-size: 30px; color: var(--pink); text-shadow: 0 0 10px var(--pink); animation: tp 2s infinite; }
+  .tttprev span::after { content: ''; position: absolute; left: 44px; top: 44px; width: 20px; height: 20px; border: 3px solid var(--cyan); border-radius: 50%;
+    box-shadow: 0 0 10px var(--cyan); animation: tp 2s 1s infinite; }
+  @keyframes tp { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
   footer { position: relative; z-index: 1; text-align: center; margin-top: 40px; font-size: 13px; letter-spacing: 3px; color: #a99ad8; }
 
   @keyframes blink { 50% { opacity: .35; } }
@@ -181,6 +190,14 @@
         <h2>Vier in Reihe</h2>
         <p>Steine einwerfen und vier in eine Reihe bringen – gegen die KI oder zu zweit.</p>
         <span class="play">SPIELEN</span> <span class="rec" data-href="/rekorde/#vier">REKORDE</span>
+      </div>
+    </a>
+    <a class="game" href="/ttt/">
+      <div class="screen tttprev"><span></span></div>
+      <div class="info">
+        <h2>Tic Tac Toe</h2>
+        <p>Kreuz gegen Kreis – gegen die KI oder zu zweit, auch auf größeren Feldern.</p>
+        <span class="play">SPIELEN</span> <span class="rec" data-href="/rekorde/#ttt">REKORDE</span>
       </div>
     </a>
     <div class="game soon">
