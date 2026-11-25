@@ -10,6 +10,8 @@ Eine Sammlung kleiner Browserspiele. Die Startseite (`index.html`) zeigt alle Sp
 | Blockfall | `block/` |
 | Solitaire | `solitaire/` |
 
+Die Seite `rekorde/` zeigt die Rekorde aller Spiele. Als Rekord zählt nur, was mit fairen Einstellungen geschafft wurde.
+
 Ein neues Spiel bekommt einen eigenen Ordner und eine Karte auf der Startseite.
 
 # Snake

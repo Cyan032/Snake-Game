@@ -823,6 +823,8 @@
     if (gold) Sound.gold(); else Sound.eat();
     const total = scoreOf();
     if (!m.versus && total > g.best) { g.best = total; store.set('best.' + m.id, g.best); }
+    // Faire Rekorde für die Rekorde-Seite: nur mit 1 Apfel und mindestens normalem Tempo, nie im Friedlich-Modus
+    if (!m.versus && !m.peaceful && settings.apples === 1 && settings.speed !== 'slow' && total > store.get('fair.' + m.id, 0)) store.set('fair.' + m.id, total);
     if (m.turbo) { g.turbo = Math.pow(0.97, total); retime(); }
     if (!gold && !apple.extra && !spawn('apples')) g.full = true;
     if (!gold && settings.bonus === 'on' && !g.apples.some((a) => a.kind === 'gold') && Math.random() < 0.16) spawnGold();

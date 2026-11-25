@@ -93,6 +93,12 @@
     box-shadow: 0 0 14px var(--c); transform-origin: 50% 140%; animation: fanc 3s ease-in-out infinite; }
   .solprev i::after { content: '\2660'; position: absolute; inset: 0; display: grid; place-items: center; color: var(--c); font-size: 26px; text-shadow: 0 0 10px var(--c); }
   @keyframes fanc { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(var(--r)); } }
+  .records { display: inline-block; margin-top: 16px; padding: 9px 22px; border-radius: 12px; text-decoration: none; color: #fff; font-weight: 700;
+    letter-spacing: 3px; border: 2px solid var(--violet); background: rgba(139,92,255,.18); box-shadow: 0 0 16px rgba(139,92,255,.45); }
+  .records:hover { border-color: var(--cyan); box-shadow: 0 0 22px rgba(41,240,255,.45); }
+  .rec { display: inline-flex; align-items: center; padding: 10px 14px; margin-left: 6px; border-radius: 12px; font-weight: 700; letter-spacing: 2px; font-size: 14px;
+    color: #c9bdf2; border: 2px solid rgba(139,92,255,.6); cursor: pointer; }
+  .rec:hover { color: #fff; border-color: var(--cyan); }
   footer { position: relative; z-index: 1; text-align: center; margin-top: 40px; font-size: 13px; letter-spacing: 3px; color: #a99ad8; }
 
   @keyframes blink { 50% { opacity: .35; } }
@@ -109,6 +115,7 @@
     <h1>Arcadia</h1>
     <p class="tag">Deine Spielhalle im Browser</p>
     <span class="insert">Press Start</span>
+    <div><a class="records" href="/rekorde/">Rekorde</a></div>
   </header>
 
   <main class="games">
@@ -117,7 +124,7 @@
       <div class="info">
         <h2>Snake</h2>
         <p>Der Klassiker mit 16 Spielmodi, Parkour-Training und 6 Welten.</p>
-        <span class="play">SPIELEN</span>
+        <span class="play">SPIELEN</span> <span class="rec" data-href="/rekorde/#snake">REKORDE</span>
       </div>
     </a>
     <a class="game" href="/flug/">
@@ -125,7 +132,7 @@
       <div class="info">
         <h2>Flappy Bird</h2>
         <p>Ein Tipp, ein Flügelschlag: flieg durch die Lücken zwischen den Säulen.</p>
-        <span class="play">SPIELEN</span>
+        <span class="play">SPIELEN</span> <span class="rec" data-href="/rekorde/#flug">REKORDE</span>
       </div>
     </a>
     <a class="game" href="/dino/">
@@ -133,7 +140,7 @@
       <div class="info">
         <h2>Dino Runner</h2>
         <p>Spring über Steine und Büsche und duck dich unter Bienen weg.</p>
-        <span class="play">SPIELEN</span>
+        <span class="play">SPIELEN</span> <span class="rec" data-href="/rekorde/#dino">REKORDE</span>
       </div>
     </a>
     <a class="game" href="/block/">
@@ -141,7 +148,7 @@
       <div class="info">
         <h2>Blockfall</h2>
         <p>Steine drehen, Reihen füllen, Punkte sammeln – mit Vorschau und Halten.</p>
-        <span class="play">SPIELEN</span>
+        <span class="play">SPIELEN</span> <span class="rec" data-href="/rekorde/#block">REKORDE</span>
       </div>
     </a>
     <a class="game" href="/solitaire/">
@@ -149,7 +156,7 @@
       <div class="info">
         <h2>Solitaire</h2>
         <p>Der Kartenklassiker: Spalten ordnen und alle vier Farben ablegen.</p>
-        <span class="play">SPIELEN</span>
+        <span class="play">SPIELEN</span> <span class="rec" data-href="/rekorde/#solitaire">REKORDE</span>
       </div>
     </a>
     <div class="game soon">
@@ -223,6 +230,9 @@
   }
   addEventListener('resize', () => { sizeDemo(); if (still) frame(0); });
   sizeDemo(); resetSnake();
+
+  // Rekorde-Knopf in der Karte öffnet die Rekorde-Seite statt das Spiel
+  document.querySelectorAll('.rec').forEach((b) => b.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); location.href = b.dataset.href; }));
 
   // Karten kippen in 3D Richtung Maus
   document.querySelectorAll('a.game').forEach((card) => {

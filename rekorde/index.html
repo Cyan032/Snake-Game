@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d0520">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Rekorde – Arcadia</title>
+<link href="https://fonts.googleapis.com/css2?family=Monoton&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --pink: #ff3ea5; --cyan: #29f0ff; --violet: #8b5cff; --gold: #ffd54f; --ink: #0d0520; --muted: #a99ad8; }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; font-family: 'Fredoka', system-ui, sans-serif; color: #fff;
+    background: radial-gradient(120% 80% at 50% 0%, #2a0d55 0%, #150834 55%, #0d0520 100%) fixed #0d0520; }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 22px 16px 60px; }
+  .back { display: inline-block; color: var(--cyan); text-decoration: none; font-weight: 700; letter-spacing: 2px; padding: 6px 12px;
+    border: 2px solid rgba(41,240,255,.6); border-radius: 10px; }
+  h1 { margin: 22px 0 4px; text-align: center; font-family: 'Monoton', sans-serif; font-weight: 400; letter-spacing: 5px;
+    font-size: clamp(40px, 10vw, 72px); color: #ffe4f3; text-shadow: 0 0 6px #fff, 0 0 18px var(--pink), 0 0 40px var(--pink); }
+  .sub { text-align: center; color: var(--muted); margin: 0 0 26px; font-size: 15px; line-height: 1.5; }
+  .game { background: rgba(20,8,48,.78); border: 2px solid rgba(139,92,255,.55); border-radius: 20px; padding: 18px 18px 14px; margin-bottom: 18px;
+    box-shadow: 0 0 22px rgba(139,92,255,.2); }
+  .head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .head h2 { margin: 0; font-size: 26px; flex: 1; }
+  .head a { color: var(--cyan); text-decoration: none; font-weight: 600; font-size: 14px; letter-spacing: 1px; }
+  .big { display: flex; gap: 12px; flex-wrap: wrap; margin: 14px 0 10px; }
+  .tile { flex: 1 1 150px; background: rgba(255,255,255,.05); border-radius: 14px; padding: 10px 14px; }
+  .tile .l { font-size: 13px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+  .tile .v { font-size: 30px; font-weight: 700; color: var(--gold); text-shadow: 0 0 12px rgba(255,213,79,.4); }
+  .tile .n { font-size: 13px; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  td { padding: 6px 4px; border-top: 1px solid rgba(255,255,255,.07); }
+  td:last-child { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+  td .n { color: var(--muted); font-size: 13px; }
+  details { margin-top: 8px; }
+  summary { cursor: pointer; color: var(--muted); font-size: 14px; padding: 4px 0; }
+  .none { color: var(--muted); font-size: 15px; margin: 10px 0 4px; }
+  .game { scroll-margin-top: 16px; }
+  .note { color: var(--muted); font-size: 13px; margin: 8px 0 0; line-height: 1.5; }
+  .stars { color: var(--gold); letter-spacing: 2px; }
+  .stars i { color: rgba(255,255,255,.18); font-style: normal; }
+  .reset { display: block; margin: 30px auto 0; background: transparent; color: var(--muted); border: 1px solid rgba(169,154,216,.4);
+    border-radius: 10px; padding: 8px 14px; font-family: inherit; font-size: 14px; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="/">‹ Arcadia</a>
+  <h1>Rekorde</h1>
+  <p class="sub">Als Rekord zählt nur, was unter fairen Einstellungen geschafft wurde.<br>Leichtere Einstellungen stehen getrennt darunter.</p>
+  <div id="list"></div>
+  <button class="reset" id="reset" type="button">Alle Rekorde löschen</button>
+</div>
+<script src="/snake/levels.js"></script>
+<script>
+(() => {
+  'use strict';
+  const get = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } };
+  const fmt = (s) => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
+  const fmtMs = (s) => s < 60 ? s.toFixed(1) + ' s' : fmt(s);
+  const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  const out = [];
+  const tile = (label, value, note = '') => `<div class="tile"><div class="l">${label}</div><div class="v">${value}</div><div class="n">${note}</div></div>`;
+  const card = (name, href, inner) => out.push(`<section class="game" id="${href.replace(/\//g, '')}"><div class="head"><h2>${name}</h2><a href="${href}">SPIELEN ›</a></div>${inner}</section>`);
+
+  // Für Spiele mit Einstellungen: Schlüssel "prefix + Ziffern" auslesen und in fair / leichter aufteilen
+  function combos(prefix, opts, isFair) {
+    const list = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k || !k.startsWith(prefix)) continue;
+      const digits = k.slice(prefix.length).split('').map(Number), val = +localStorage.getItem(k);
+      if (!val || digits.length !== opts.length || digits.some(isNaN)) continue;
+      list.push({ val, fair: isFair(digits), text: opts.map(([name, labels], j) => `${name} ${labels[digits[j]]}`).join(' · ') });
+    }
+    list.sort((a, b) => b.val - a.val);
+    return { fair: list.filter((x) => x.fair), easy: list.filter((x) => !x.fair) };
+  }
+  function comboBlock(c, unit, fairRule) {
+    let h = '';
+    if (c.fair.length) {
+      h += `<div class="big">${tile('Rekord', c.fair[0].val + unit, esc(c.fair[0].text))}</div>`;
+      if (c.fair.length > 1) h += `<details><summary>Weitere faire Rekorde (${c.fair.length - 1})</summary><table>${c.fair.slice(1).map((x) => `<tr><td><span class="n">${esc(x.text)}</span></td><td>${x.val}${unit}</td></tr>`).join('')}</table></details>`;
+    } else h += `<p class="none">Noch kein fairer Rekord.</p>`;
+    if (c.easy.length) h += `<details><summary>Mit leichteren Einstellungen (${c.easy.length}), zählt nicht als Rekord</summary><table>${c.easy.map((x) => `<tr><td><span class="n">${esc(x.text)}</span></td><td>${x.val}${unit}</td></tr>`).join('')}</table></details>`;
+    return h + `<p class="note">Fair heißt: ${fairRule}</p>`;
+  }
+
+  // ---------- Snake ----------
+  {
+    const MODES = [['classic', 'Klassisch'], ['wrap', 'Ohne Wände'], ['walls', 'Hindernisse'], ['portal', 'Portale'], ['poison', 'Gift'], ['turbo', 'Turbo'],
+      ['time', 'Zeitrennen'], ['mirror', 'Spiegel'], ['dark', 'Dunkel'], ['flee', 'Fluchtäpfel'], ['hunger', 'Hunger'], ['zone', 'Zone'], ['chaos', 'Chaos']];
+    const rows = MODES.map(([id, name]) => ({ id, name, fair: get('snake.fair.' + id, 0), old: get('snake.best.' + id, 0) }));
+    const main = rows[0];
+    let h = `<div class="big">${tile('Klassisch', main.fair || '–', 'Hauptrekord')}${tile('Bester Modus', Math.max(0, ...rows.map((r) => r.fair)) || '–', (rows.slice().sort((a, b) => b.fair - a.fair)[0].fair ? rows.slice().sort((a, b) => b.fair - a.fair)[0].name : ''))}</div>`;
+    h += `<table>${rows.map((r) => `<tr><td>${r.name}</td><td>${r.fair || '<span class="n">–</span>'}</td></tr>`).join('')}</table>`;
+    const olds = rows.filter((r) => r.old > r.fair);
+    if (olds.length) h += `<details><summary>Ältere Bestwerte (Einstellungen unbekannt, zählen nicht)</summary><table>${olds.map((r) => `<tr><td>${r.name}</td><td>${r.old}</td></tr>`).join('')}</table></details>`;
+    // Parkour
+    const LV = window.SNAKE_LEVELS || [], park = get('snake.park', {}), TIERS = ['Leicht', 'Mittel', 'Schwer', 'Profi'];
+    const starsOf = (lv) => lv.map.join('').split('*').length - 1 + (lv.stars || []).length;
+    const total = LV.reduce((a, lv) => a + starsOf(lv), 0), got = LV.reduce((a, lv) => a + ((park[lv.id] || {}).s || 0), 0);
+    const done = LV.filter((lv) => park[lv.id]).length;
+    h += `<div class="big">${tile('Parkour Sterne', got + ' / ' + total)}${tile('Parkour Level', done + ' / ' + LV.length, 'geschafft')}</div>`;
+    if (done) h += `<details><summary>Bestzeiten im Parkour</summary><table>${LV.filter((lv) => park[lv.id]).map((lv) => {
+      const r = park[lv.id], n = starsOf(lv);
+      return `<tr><td>${esc(lv.name)} <span class="n">${TIERS[lv.tier] || ''}</span> <span class="stars">${'★'.repeat(r.s)}<i>${'★'.repeat(Math.max(0, n - r.s))}</i></span></td><td>${fmtMs(r.t)}</td></tr>`;
+    }).join('')}</table></details>`;
+    h += `<p class="note">Fair heißt: 1 Apfel gleichzeitig und Tempo Normal oder Schnell. Friedlich, 2 Spieler und Gegen KI haben keine Rekorde.</p>`;
+    card('Snake', '/snake/', h);
+  }
+
+  // ---------- Flappy Bird ----------
+  card('Flappy Bird', '/flug/', comboBlock(combos('flug.best.', [
+    ['Tempo', ['Langsam', 'Normal', 'Schnell', 'Turbo']], ['Lücke', ['Klein', 'Mittel', 'Groß', 'Riesig']],
+    ['Abstand', ['Eng', 'Normal', 'Weit']], ['Schwerkraft', ['Leicht', 'Normal', 'Stark']], ['Schwerer', ['Aus', 'An']],
+  ], ([sp, gap, spc, gr, ramp]) => sp >= 1 && gap <= 1 && spc <= 1 && gr >= 1 && ramp === 1), ' Pkt.',
+  'Tempo mindestens Normal, Lücke höchstens Mittel, Abstand höchstens Normal, Schwerkraft mindestens Normal und „Wird schwerer“ an.'));
+
+  // ---------- Dino Runner ----------
+  card('Dino Runner', '/dino/', comboBlock(combos('dino.best.', [
+    ['Tempo', ['Langsam', 'Normal', 'Schnell', 'Turbo']], ['Schneller', ['Aus', 'Normal', 'Stark']],
+    ['Hindernisse', ['Wenig', 'Normal', 'Viel']], ['Sprung', ['Niedrig', 'Normal', 'Hoch']], ['Bienen', ['Aus', 'An']],
+  ], ([sp, ramp, den, jump, bees]) => sp >= 1 && ramp >= 1 && den >= 1 && jump <= 1 && bees === 1), ' m',
+  'Tempo mindestens Normal, „Wird schneller“ an, Hindernisse mindestens Normal, Sprungkraft höchstens Normal und Bienen an.'));
+
+  // ---------- Blockfall ----------
+  card('Blockfall', '/block/', comboBlock(combos('block.best.', [
+    ['Start-Level', ['1', '3', '5', '8', '10']], ['Schneller', ['Aus', 'An']], ['Feld', ['Klein', 'Normal', 'Breit']],
+  ], ([st, ramp, size]) => ramp === 1 && size === 1), ' Pkt.',
+  '„Wird schneller“ an und Spielfeld Normal. Das Start-Level ist egal, weil höhere Level schneller sind.'));
+
+  // ---------- Solitaire ----------
+  {
+    const s = get('sol.stats', {});
+    let h = `<div class="big">${tile('Siege', s.wins || 0)}${tile('Bestzeit · 1 Karte', s.best1 ? fmt(s.best1) : '–')}${tile('Bestzeit · 3 Karten', s.best3 ? fmt(s.best3) : '–')}</div>`;
+    h += `<p class="note">1 Karte und 3 Karten werden getrennt gewertet, weil 3 Karten deutlich schwerer ist.</p>`;
+    card('Solitaire', '/solitaire/', h);
+  }
+
+  document.getElementById('list').innerHTML = out.join('');
+  if (location.hash) { const t = document.querySelector(location.hash); if (t) { t.scrollIntoView(); t.style.borderColor = 'var(--cyan)'; t.style.boxShadow = '0 0 30px rgba(41,240,255,.4)'; } }
+  document.getElementById('reset').onclick = () => {
+    if (!confirm('Wirklich alle Rekorde aller Spiele löschen? Einstellungen bleiben erhalten.')) return;
+    const del = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (/^(snake\.(best|fair)\.|snake\.park$|flug\.best\.|dino\.best\.|block\.best\.|sol\.stats$)/.test(k)) del.push(k);
+    }
+    del.forEach((k) => localStorage.removeItem(k)); location.reload();
+  };
+})();
+</script>
+</body>
+</html>
