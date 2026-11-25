@@ -289,19 +289,44 @@
     // Partikel
     for (const p of parts) { ctx.globalAlpha = p.life / 0.4; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(p.x * c, p.y * c, c * 0.09, 0, 7); ctx.fill(); }
     ctx.globalAlpha = 1;
-    // Spieler: runder Ball mit Snake-Augen und Flügel
-    const col = v('color');
+    // Spieler: kleiner Vogel mit Schopf, Schnabel, Bauch, Schwanzfedern und schlagendem Flügel
+    const col = v('color'), u = c;
+    const dark = (k) => { const n = parseInt(col.slice(1), 16); return `rgb(${(n >> 16) * k / 100},${(n >> 8 & 255) * k / 100},${(n & 255) * k / 100})`; };
     ctx.save(); ctx.translate(bird.x * c, bird.y * c);
     ctx.rotate(Math.max(-0.45, Math.min(1.1, bird.vy / 14)));
-    ctx.fillStyle = 'rgba(0,0,0,.15)'; ctx.beginPath(); ctx.arc(0, c * 0.06, R * c, 0, 7); ctx.fill();
-    ctx.fillStyle = col; ctx.beginPath(); ctx.arc(0, 0, R * c, 0, 7); ctx.fill();
-    const wing = state === 'play' ? Math.sin(t * 20) * 0.18 : 0;
-    ctx.fillStyle = 'rgba(255,255,255,.35)';
-    ctx.beginPath(); ctx.ellipse(-c * 0.12, c * (0.06 + wing), c * 0.22, c * 0.13, -0.3, 0, 7); ctx.fill();
-    for (const s of [-1, 1]) {
-      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(c * 0.16, s * c * 0.16 - c * 0.04, c * 0.14, 0, 7); ctx.fill();
-      ctx.fillStyle = '#1b1b1b'; ctx.beginPath(); ctx.arc(c * 0.2, s * c * 0.16 - c * 0.04, c * 0.07, 0, 7); ctx.fill();
+    ctx.lineJoin = 'round';
+    // Schwanzfedern
+    ctx.fillStyle = dark(70);
+    for (const a of [-0.35, 0, 0.35]) {
+      ctx.save(); ctx.rotate(a); ctx.beginPath(); ctx.ellipse(-u * 0.5, 0, u * 0.2, u * 0.08, 0, 0, 7); ctx.fill(); ctx.restore();
     }
+    // Füße
+    ctx.strokeStyle = '#f08a24'; ctx.lineWidth = u * 0.06; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-u * 0.05, u * 0.36); ctx.lineTo(-u * 0.1, u * 0.5); ctx.moveTo(u * 0.08, u * 0.36); ctx.lineTo(u * 0.05, u * 0.5); ctx.stroke();
+    // Körper
+    ctx.fillStyle = col; ctx.beginPath(); ctx.ellipse(0, 0, u * 0.46, u * 0.4, 0, 0, 7); ctx.fill();
+    // Bauch
+    ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.beginPath(); ctx.ellipse(u * 0.08, u * 0.16, u * 0.26, u * 0.19, 0, 0, 7); ctx.fill();
+    // Schopf
+    ctx.fillStyle = dark(70);
+    ctx.beginPath(); ctx.moveTo(-u * 0.02, -u * 0.36); ctx.quadraticCurveTo(-u * 0.12, -u * 0.62, u * 0.06, -u * 0.55);
+    ctx.quadraticCurveTo(u * 0.05, -u * 0.45, u * 0.12, -u * 0.36); ctx.fill();
+    // Schnabel
+    ctx.fillStyle = '#ffb02e'; ctx.beginPath(); ctx.moveTo(u * 0.36, -u * 0.1); ctx.lineTo(u * 0.66, -u * 0.01); ctx.lineTo(u * 0.36, u * 0.05); ctx.fill();
+    ctx.fillStyle = '#f08a24'; ctx.beginPath(); ctx.moveTo(u * 0.36, -u * 0.01); ctx.lineTo(u * 0.6, u * 0.0); ctx.lineTo(u * 0.36, u * 0.08); ctx.fill();
+    // Auge
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(u * 0.2, -u * 0.13, u * 0.13, 0, 7); ctx.fill();
+    ctx.fillStyle = '#1b1b1b'; ctx.beginPath(); ctx.arc(u * 0.24, -u * 0.13, u * 0.065, 0, 7); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(u * 0.26, -u * 0.16, u * 0.022, 0, 7); ctx.fill();
+    // Wange
+    ctx.fillStyle = 'rgba(255,120,150,.45)'; ctx.beginPath(); ctx.arc(u * 0.22, u * 0.06, u * 0.06, 0, 7); ctx.fill();
+    // Flügel: schlägt beim Hochfliegen kräftig
+    const flapAmt = state === 'over' ? 0.3 : (state === 'play' && bird.vy < 0 ? Math.sin(t * 28) : Math.sin(t * 8) * 0.4);
+    ctx.save(); ctx.translate(-u * 0.08, u * 0.02); ctx.rotate(-0.2 - flapAmt * 0.7);
+    ctx.fillStyle = dark(78); ctx.beginPath(); ctx.ellipse(-u * 0.12, 0, u * 0.24, u * 0.13, 0, 0, 7); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = u * 0.03;
+    ctx.beginPath(); ctx.moveTo(-u * 0.3, 0); ctx.lineTo(-u * 0.05, 0); ctx.stroke();
+    ctx.restore();
     ctx.restore();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
   }
