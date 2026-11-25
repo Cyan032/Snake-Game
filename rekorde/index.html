@@ -6,6 +6,7 @@
 <meta name="theme-color" content="#0d0520">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Rekorde – Arcadia</title>
+<script src="/arcadia.js?v=2"></script>
 <link rel="icon" type="image/png" sizes="64x64" href="/icons/favicon-64.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
@@ -39,6 +40,17 @@
   summary { cursor: pointer; color: var(--muted); font-size: 14px; padding: 4px 0; }
   .none { color: var(--muted); font-size: 15px; margin: 10px 0 4px; }
   .game { scroll-margin-top: 16px; }
+  .seg { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 8px; }
+  .seg button, .kbtn { border: 2px solid rgba(139,92,255,.6); background: transparent; color: #c9bdf2; border-radius: 10px; padding: 7px 12px;
+    font: 600 14px 'Fredoka', sans-serif; cursor: pointer; }
+  .seg button.on { background: var(--violet); border-color: var(--violet); color: #fff; }
+  .kbtn:hover, .seg button:hover { border-color: var(--cyan); color: #fff; }
+  .kbtn.main { background: linear-gradient(90deg, var(--pink), var(--violet)); border: 0; color: #fff; padding: 9px 16px; }
+  .krow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
+  .kcode { font-size: 22px; letter-spacing: 3px; color: var(--cyan); font-weight: 700; font-variant-numeric: tabular-nums; }
+  .kcode.hide { filter: blur(7px); user-select: none; }
+  tr.me td { color: var(--cyan); font-weight: 700; }
+  td.rk { width: 34px; color: var(--muted); }
   .note { color: var(--muted); font-size: 13px; margin: 8px 0 0; line-height: 1.5; }
   .stars { color: var(--gold); letter-spacing: 2px; }
   .stars i { color: rgba(255,255,255,.18); font-style: normal; }
@@ -51,6 +63,13 @@
   <a class="back" href="/">‹ Arcadia</a>
   <h1>Rekorde</h1>
   <p class="sub">Als Rekord zählt nur, was unter fairen Einstellungen geschafft wurde.<br>Leichtere Einstellungen stehen getrennt darunter.</p>
+  <section class="game" id="konto"></section>
+  <section class="game" id="welt">
+    <div class="head"><h2>Weltweit Top 10</h2></div>
+    <div class="seg" id="wseg"></div>
+    <div id="wlist"><p class="none">Lädt …</p></div>
+    <p class="note">Die Liste wird etwa jede Minute aktualisiert.</p>
+  </section>
   <div id="list"></div>
   <button class="reset" id="reset" type="button">Alle Rekorde löschen</button>
 </div>
@@ -142,6 +161,64 @@
   }
 
   document.getElementById('list').innerHTML = out.join('');
+
+  // ---------- Konto ----------
+  const A = window.Arcadia;
+  function konto() {
+    const el = document.getElementById('konto');
+    if (!A) { el.remove(); return; }
+    if (!A.code) {
+      el.innerHTML = `<div class="head"><h2>Mein Konto</h2></div><p class="none">Du spielst ohne Konto. Deine Rekorde bleiben nur auf diesem Gerät und erscheinen nicht in der weltweiten Liste.</p>
+        <div class="krow"><button class="kbtn main" id="k-reg">Registrieren</button><button class="kbtn" id="k-log">Anmelden</button></div>`;
+      el.querySelector('#k-reg').onclick = () => A.showGate('reg');
+      el.querySelector('#k-log').onclick = () => A.showGate('log');
+      return;
+    }
+    el.innerHTML = `<div class="head"><h2>Mein Konto</h2></div>
+      <div class="big">${tile('Name', esc(A.name))}</div>
+      <p class="note" style="margin-top:0">Dein Code (zum Anmelden auf anderen Geräten):</p>
+      <div class="krow"><span class="kcode hide" id="k-code">${A.fmtCode(A.code)}</span>
+        <button class="kbtn" id="k-show">Zeigen</button><button class="kbtn" id="k-copy">Kopieren</button></div>
+      <div class="krow"><button class="kbtn" id="k-name">Namen ändern</button><button class="kbtn" id="k-out">Abmelden</button></div>
+      <p class="err none" id="k-err" style="color:#ff8a9a"></p>`;
+    const err = el.querySelector('#k-err');
+    el.querySelector('#k-show').onclick = (e) => { const c = el.querySelector('#k-code'); c.classList.toggle('hide'); e.target.textContent = c.classList.contains('hide') ? 'Zeigen' : 'Verstecken'; };
+    el.querySelector('#k-copy').onclick = (e) => A.copyCode(A.code, e.target);
+    el.querySelector('#k-name').onclick = async () => {
+      const n = prompt('Neuer Name (2–16 Zeichen):', A.name); if (!n) return;
+      try { await A.rename(n); konto(); welt(true); } catch (x) { err.textContent = x.message; }
+    };
+    el.querySelector('#k-out').onclick = () => {
+      if (!confirm('Abmelden? Ohne deinen Code kommst du nicht mehr in dieses Konto. Hast du ihn gespeichert?')) return;
+      A.logout();
+    };
+  }
+  konto();
+
+  // ---------- Weltweite Bestenliste ----------
+  const WB = [['snake-classic', 'Snake Klassisch', ''], ['snake-park', 'Snake Parkour', ' ★'], ['flug', 'Flappy Bird', ' Pkt.'], ['dino', 'Dino Runner', ' m'],
+    ['block', 'Blockfall', ' Pkt.'], ['sol1', 'Solitaire (1)', 't'], ['sol3', 'Solitaire (3)', 't']];
+  let wdata = null, wsel = 'snake-classic';
+  try { wsel = sessionStorage.getItem('rek.welt') || wsel; } catch (e) {}
+  function wrender() {
+    document.getElementById('wseg').innerHTML = WB.map(([b, n]) => `<button data-b="${b}" class="${b === wsel ? 'on' : ''}">${n}</button>`).join('');
+    document.querySelectorAll('#wseg button').forEach((x) => (x.onclick = () => { wsel = x.dataset.b; try { sessionStorage.setItem('rek.welt', wsel); } catch (e) {} wrender(); }));
+    const box = document.getElementById('wlist');
+    if (!wdata) return;
+    if (wdata.error) { box.innerHTML = `<p class="none">${esc(wdata.error)}</p>`; return; }
+    const rows = wdata[wsel] || [], unit = WB.find((w) => w[0] === wsel)[2], me = A && A.id;
+    box.innerHTML = rows.length ? `<table>${rows.map((r, i) => `<tr class="${r.id === me ? 'me' : ''}"><td class="rk">${i + 1}.</td><td>${esc(r.name)}${r.id === me ? ' (du)' : ''}</td><td>${unit === 't' ? fmtMs(r.score) : r.score + unit}</td></tr>`).join('')}</table>`
+      : `<p class="none">Noch niemand drin. Sei der Erste!</p>`;
+  }
+  async function welt(fresh) {
+    try {
+      if (fresh && A && A.code) await A.sync().catch(() => {});
+      wdata = A ? await A.top(WB.map((w) => w[0])) : { error: 'Nicht verfügbar.' };
+    } catch (e) { wdata = { error: 'Die weltweite Bestenliste ist gerade nicht erreichbar.' }; }
+    wrender();
+  }
+  wrender(); welt(true);
+  addEventListener('arcadia:account', () => { konto(); welt(true); });
   if (location.hash) { const t = document.querySelector(location.hash); if (t) { t.scrollIntoView(); t.style.borderColor = 'var(--cyan)'; t.style.boxShadow = '0 0 30px rgba(41,240,255,.4)'; } }
   document.getElementById('reset').onclick = () => {
     if (!confirm('Wirklich alle Rekorde aller Spiele löschen? Einstellungen bleiben erhalten.')) return;

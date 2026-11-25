@@ -12,6 +12,8 @@ Eine Sammlung kleiner Browserspiele. Die Startseite (`index.html`) zeigt alle Sp
 
 Die Seite `rekorde/` zeigt die Rekorde aller Spiele. Als Rekord zählt nur, was mit fairen Einstellungen geschafft wurde.
 
+Konten und die weltweite Bestenliste laufen über `api/arcadia.js` (Vercel-Funktion) mit einer Upstash-Redis-Datenbank. Ein Konto ist ein 12-stelliger Code, in der Datenbank liegt nur ein Hash davon. `arcadia.js` wird auf allen Seiten geladen, zeigt beim ersten Besuch Registrieren/Anmelden und lädt neue faire Rekorde automatisch hoch.
+
 Ein neues Spiel bekommt einen eigenen Ordner und eine Karte auf der Startseite.
 
 # Snake
