@@ -15,6 +15,7 @@
     dino: { prefix: 'dino.best.', n: 5, ok: ([sp, ramp, den, jump, bees]) => sp >= 1 && ramp >= 1 && den >= 1 && jump <= 1 && bees === 1 },
     block: { prefix: 'block.best.', n: 3, ok: ([, ramp, size]) => ramp === 1 && size === 1 },
     fruit: { prefix: 'fruit.best.', n: 2, ok: ([box]) => box >= 1 },
+    stack: { prefix: 'stack.best.', n: 3, ok: ([sp, ramp, tol]) => sp >= 1 && ramp === 1 && tol <= 1 },
   };
   function bestCombo(cfg) {
     let best = 0;
@@ -103,7 +104,7 @@
 
   // Wenn ein Spiel einen Rekord speichert, kurz danach automatisch hochladen
   let timer = 0;
-  const RX = /^(snake\.fair\.|snake\.park$|flug\.best\.|dino\.best\.|block\.best\.|fruit\.best\.|sol\.stats$|vier\.stats$)/;
+  const RX = /^(snake\.fair\.|snake\.park$|flug\.best\.|dino\.best\.|block\.best\.|fruit\.best\.|stack\.best\.|sol\.stats$|vier\.stats$)/;
   const plan = () => { clearTimeout(timer); timer = setTimeout(() => A.sync().catch(() => {}), 1500); };
   try {
     const orig = Storage.prototype.setItem;

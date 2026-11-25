@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#4a752c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Stack – Arcadia</title>
+<script src="/arcadia.js?v=5"></script>
+<link rel="icon" type="image/png" sizes="64x64" href="/icons/favicon-64.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --hud: #4a752c; --frame: #578a34; --ink: #203018; --muted: #6b7d5c; --soft: #f1f7e8; --soft-2: #e3efd3;
+    --blue: #3f6ff0; --blue-dark: #2b51c4; --p1: #6fa344; --p2: #3f6a24; --p3: #294a15; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { font-family: 'Fredoka', system-ui, sans-serif; color: #fff; overflow: hidden; touch-action: manipulation;
+    -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent;
+    background: radial-gradient(120% 90% at 50% 0%, var(--p1) 0%, var(--p2) 55%, var(--p3) 100%) fixed var(--p2);
+    display: flex; align-items: center; justify-content: center; min-height: 100vh; min-height: 100dvh; }
+  button { font-family: inherit; touch-action: manipulation; }
+  .hidden { display: none !important; }
+  #app { display: flex; flex-direction: column; }
+  #hud { display: flex; align-items: center; gap: 14px; min-height: 54px; background: var(--hud); padding: 6px 10px 6px 14px;
+    border-radius: 16px 16px 0 0; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+  .stat { display: flex; align-items: center; gap: 7px; font-size: 22px; font-weight: 600; }
+  .stat svg { width: 26px; height: 26px; }
+  .grow { flex: 1; }
+  .icon-btn { width: 40px; height: 40px; border: 0; border-radius: 12px; cursor: pointer; background: rgba(255,255,255,.12);
+    color: #fff; font-size: 20px; display: grid; place-items: center; }
+  .icon-btn:hover { background: rgba(255,255,255,.22); }
+  #frame { position: relative; background: var(--frame); padding: 10px; border-radius: 0 0 16px 16px; box-shadow: 0 18px 40px rgba(0,0,0,.3); }
+  #board { display: block; border-radius: 6px; touch-action: none; }
+  #hint { position: absolute; left: 50%; bottom: 30px; transform: translateX(-50%); padding: 12px 18px; border-radius: 16px;
+    background: rgba(16,26,10,.8); text-align: center; font-size: 16px; pointer-events: none; white-space: nowrap; }
+  #hint b { display: block; font-size: 19px; }
+
+  #menu { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(20,35,10,.45); z-index: 5; padding: 14px; }
+  .card { position: relative; width: min(440px, 100%); max-height: calc(100dvh - 28px); overflow: auto; background: #fff; color: var(--ink);
+    border-radius: 22px; padding: 22px 20px 20px; box-shadow: 0 20px 50px rgba(0,0,0,.35); }
+  .home { position: absolute; top: 14px; left: 16px; color: var(--muted); text-decoration: none; font-weight: 600; font-size: 14px; }
+  h1 { margin: 10px 0 2px; text-align: center; font-size: 34px; color: var(--hud); }
+  .result { text-align: center; color: var(--muted); font-size: 17px; margin: 0 0 12px; min-height: 22px; }
+  .result b { color: var(--ink); }
+  .row { margin: 10px 0; }
+  .row label { display: block; font-size: 14px; font-weight: 600; color: var(--muted); margin: 0 0 5px 4px; }
+  .seg { display: flex; gap: 2px; padding: 3px; border-radius: 13px; background: var(--soft); }
+  .seg button { flex: 1; border: 0; background: transparent; padding: 8px 4px; border-radius: 10px; font-size: 15px; font-weight: 600;
+    color: var(--muted); cursor: pointer; white-space: nowrap; }
+  .seg button.on { background: #fff; color: var(--ink); box-shadow: 0 1px 4px rgba(0,0,0,.15); }
+  .seg.colors button { height: 34px; padding: 0; }
+  .seg.colors button i { display: inline-block; width: 20px; height: 20px; border-radius: 50%; vertical-align: middle; }
+  .seg.colors button.on i { box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--ink); }
+  .actions { display: flex; gap: 10px; margin-top: 16px; }
+  .btn { flex: 1; border: 0; border-radius: 14px; padding: 13px 20px; font-size: 18px; font-weight: 600; cursor: pointer; background: var(--soft-2); color: var(--ink); }
+  .btn.primary { background: var(--blue); color: #fff; box-shadow: 0 4px 0 var(--blue-dark); }
+  .btn.primary:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--blue-dark); }
+  #board { touch-action: none; cursor: pointer; }
+  .keys { font-size: 13px; color: var(--muted); text-align: center; margin: 12px 0 0; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="hud">
+    <div class="stat" title="Höhe"><svg viewBox="0 0 24 24"><rect x="4" y="15" width="16" height="5" rx="1.5" fill="#a5d6a7"/><rect x="6" y="9" width="12" height="5" rx="1.5" fill="#c5e1a5"/><rect x="8" y="3" width="8" height="5" rx="1.5" fill="#fff59d"/></svg><span id="score">0</span></div>
+    <div class="stat" title="Rekord"><svg viewBox="0 0 24 24"><path d="M6 3h12v3a6 6 0 0 1-5 5.9V15h3v3H8v-3h3v-3.1A6 6 0 0 1 6 6z" fill="#ffca28"/><path d="M6 5H3a3 3 0 0 0 3 4M18 5h3a3 3 0 0 1-3 4" fill="none" stroke="#ffca28" stroke-width="2"/></svg><span id="best">0</span></div>
+    <div class="grow"></div>
+    <button class="icon-btn" id="sound" type="button" title="Ton (M)">♪</button>
+    <button class="icon-btn" id="open-menu" type="button" title="Menü (Esc)">☰</button>
+  </div>
+  <div id="frame"><canvas id="board"></canvas></div>
+</div>
+
+<div id="menu">
+  <div class="card">
+    <a class="home" href="/">‹ Arcadia</a>
+    <h1>Stack</h1>
+    <p class="result" id="result"></p>
+    <div class="row"><label>Tempo</label><div class="seg" data-s="speed"></div></div>
+    <div class="row"><label>Wird schneller</label><div class="seg" data-s="ramp"></div></div>
+    <div class="row"><label>Perfekt-Bereich</label><div class="seg" data-s="tol"></div></div>
+    <div class="row"><label>Farben</label><div class="seg" data-s="pal"></div></div>
+    <div class="row"><label>Welt</label><div class="seg" data-s="world"></div></div>
+    <div class="actions">
+      <button class="btn" id="reset" type="button">Zurücksetzen</button>
+      <button class="btn primary" id="start" type="button">Spielen</button>
+    </div>
+    <p class="keys">Tippen, klicken oder Leertaste: Block ablegen.<br>Was übersteht, fällt ab. Genau getroffen = Perfekt! Ab 3 Perfekt in Folge wächst der Block wieder.</p>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const cv = $('board'), ctx = cv.getContext('2d');
+
+  // ---------- Einstellungen ----------
+  const OPTS = {
+    speed: { label: ['Langsam', 'Normal', 'Schnell'], val: [170, 230, 300], def: 1 },
+    ramp:  { label: ['Aus', 'An'], val: [0, 1], def: 1 },
+    tol:   { label: ['Klein', 'Normal', 'Groß'], val: [3, 6, 11], def: 1 },
+    pal:   { label: ['Regenbogen', 'Grün', 'Bunt'], val: [0, 1, 2], def: 0 },
+    world: { label: ['Wiese', 'Wüste', 'Schnee', 'Nacht'], val: ['meadow', 'desert', 'snow', 'night'], def: 0 },
+  };
+  const WORLDS = {
+    meadow: { grass: ['#aad751', '#a2d149'], frame: '#578a34', hud: '#4a752c', page: ['#6fa344', '#3f6a24', '#294a15'], sky: ['#cfeefc', '#e9f8d9'], ground: '#4f7f2c' },
+    desert: { grass: ['#f2d58e', '#eacb7e'], frame: '#c99a4b', hud: '#a87a33', page: ['#efcd84', '#c29445', '#8c6526'], sky: ['#ffe1b3', '#fff3d6'], ground: '#c99a4b' },
+    snow:   { grass: ['#f3f8fc', '#e5eff6'], frame: '#8fb6d1', hud: '#5d8db0', page: ['#d7ebf7', '#86afcd', '#557f9f'], sky: ['#d9ecf8', '#f4f9fc'], ground: '#8fb6d1' },
+    night:  { grass: ['#2f4b2b', '#2a4427'], frame: '#1d321a', hud: '#152613', page: ['#2a462c', '#132414', '#070f08'], sky: ['#0f1a2e', '#22381f'], ground: '#1d321a' },
+  };
+  const set = {};
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem('stack.settings') || '{}'); } catch (e) {}
+  for (const k in OPTS) set[k] = Number.isInteger(saved[k]) && saved[k] < OPTS[k].val.length ? saved[k] : OPTS[k].def;
+  const v = (k) => OPTS[k].val[set[k]];
+  const save = () => { try { localStorage.setItem('stack.settings', JSON.stringify(set)); } catch (e) {} };
+  const bestKey = () => 'stack.best.' + set.speed + set.ramp + set.tol;
+  const getBest = () => { try { return +localStorage.getItem(bestKey()) || 0; } catch (e) { return 0; } };
+
+  function buildMenu() {
+    document.querySelectorAll('.seg[data-s]').forEach((seg) => {
+      const k = seg.dataset.s; seg.innerHTML = '';
+      OPTS[k].label.forEach((l, i) => {
+        const b = document.createElement('button'); b.type = 'button'; b.textContent = l;
+        b.className = i === set[k] ? 'on' : '';
+        b.onclick = () => { set[k] = i; save(); buildMenu(); applyWorld(); if (k !== 'world' && k !== 'pal') newGame(); };
+        seg.appendChild(b);
+      });
+    });
+  }
+
+  // ---------- Spielwelt (Einheiten) ----------
+  const W = 360, BH = 28, BASEW = 200, BASEY = 0; // y wächst nach oben
+  let stack, cur, falling, score, best, combo, camY, state = 'ready', t = 0, overT = 0, waves = [], dir = 1;
+  function color(i) {
+    const p = v('pal');
+    if (p === 1) return `hsl(${95 + Math.sin(i * 0.35) * 25}, ${55 + Math.sin(i * 0.2) * 10}%, ${50 + Math.sin(i * 0.5) * 8}%)`;
+    if (p === 2) return ['#4e7cf6', '#ef4f8b', '#f58a1f', '#f4c20d', '#43a047', '#9a5cf0', '#14b8a6'][i % 7];
+    return `hsl(${(i * 9 + 90) % 360}, 68%, 58%)`;
+  }
+  function newGame() {
+    stack = [{ x: (W - BASEW) / 2, w: BASEW, y: BASEY, i: 0 }];
+    falling = []; waves = []; score = 0; combo = 0; camY = 0; best = getBest(); dir = 1;
+    $('score').textContent = 0; $('best').textContent = best;
+    spawn();
+  }
+  const speed = () => v('speed') * (v('ramp') ? Math.min(1.9, 1 + score * 0.012) : 1);
+  function spawn() {
+    const top = stack[stack.length - 1];
+    dir = -dir;
+    cur = { x: dir > 0 ? -top.w : W, w: top.w, y: top.y + BH, i: stack.length, vx: dir };
+  }
+  function place() {
+    if (state === 'ready') { state = 'play'; return; } // erster Tipp startet nur
+    if (state !== 'play') return;
+    const top = stack[stack.length - 1];
+    let dx = cur.x - top.x;
+    if (Math.abs(dx) <= v('tol')) {
+      // Perfekt
+      cur.x = top.x; dx = 0; combo++;
+      waves.push({ x: cur.x, w: cur.w, y: cur.y, a: 1 });
+      if (combo >= 3 && cur.w < BASEW) { const g = Math.min(10, BASEW - cur.w); cur.w += g; cur.x -= g / 2; }
+      beep(440 * Math.pow(2, Math.min(combo, 12) / 12), 0.12, 'triangle', 0.07);
+    } else {
+      combo = 0;
+      const over = Math.abs(dx);
+      if (over >= cur.w) { // daneben
+        falling.push({ ...cur, vy: 0, rot: 0, vr: dir * 0.6 });
+        cur = null; return gameOver();
+      }
+      const keepX = dx > 0 ? cur.x : top.x, keepW = cur.w - over;
+      const cutX = dx > 0 ? top.x + top.w : cur.x;
+      falling.push({ x: cutX, w: over, y: cur.y, i: cur.i, vy: 0, rot: 0, vr: (dx > 0 ? 1 : -1) * (1 + Math.random()) });
+      cur.x = keepX; cur.w = keepW;
+      beep(300, 0.07, 'square', 0.04);
+    }
+    stack.push({ x: cur.x, w: cur.w, y: cur.y, i: cur.i });
+    score++; $('score').textContent = score;
+    if (score > best) { best = score; $('best').textContent = best; }
+    spawn();
+  }
+  function gameOver() {
+    state = 'over'; overT = 0; beep(160, 0.45, 'sawtooth', 0.06);
+    if (score > getBest()) { try { localStorage.setItem(bestKey(), score); } catch (e) {} }
+    setTimeout(() => { if (state === 'over' && !menuOpen()) openMenu(); }, 1200);
+  }
+
+  function update(dt) {
+    t += dt;
+    for (const f of falling) { f.vy -= 900 * dt; f.y += f.vy * dt; f.rot += f.vr * dt; }
+    falling = falling.filter((f) => f.y > camY - 400);
+    for (const w of waves) w.a -= dt * 1.8;
+    waves = waves.filter((w) => w.a > 0);
+    const target = Math.max(0, stack[stack.length - 1].y - 200);
+    camY += (target - camY) * Math.min(1, dt * 4);
+    if (state === 'over') { overT += dt; return; }
+    if (state !== 'play' || !cur) return;
+    cur.x += cur.vx * speed() * dt;
+    const top = stack[stack.length - 1];
+    // hin und her pendeln, bis abgelegt wird
+    if (cur.vx > 0 && cur.x > top.x + top.w + 20) cur.vx = -1;
+    if (cur.vx < 0 && cur.x + cur.w < top.x - 20) cur.vx = 1;
+  }
+
+  // ---------- Ton ----------
+  let ac, sound = true;
+  try { sound = localStorage.getItem('stack.sound') !== '0'; } catch (e) {}
+  const updSound = () => { $('sound').style.opacity = sound ? 1 : 0.45; };
+  function beep(f, d = 0.06, type = 'triangle', vol = 0.05) {
+    if (!sound) return;
+    try {
+      ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = type; o.frequency.value = f; g.gain.value = vol; g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + d);
+      o.connect(g).connect(ac.destination); o.start(); o.stop(ac.currentTime + d);
+    } catch (e) {}
+  }
+
+  // ---------- Menü und Eingabe ----------
+  const menuOpen = () => !$('menu').classList.contains('hidden');
+  function openMenu() {
+    if (state === 'play') state = 'pause';
+    $('result').innerHTML = state === 'over' ? `Höhe: <b>${score}</b> · Rekord: <b>${getBest()}</b>` : state === 'pause' ? 'Pause' : `Rekord: <b>${getBest()}</b>`;
+    $('start').textContent = state === 'pause' ? 'Weiter' : state === 'over' ? 'Nochmal' : 'Spielen';
+    $('menu').classList.remove('hidden');
+  }
+  function closeMenu() {
+    $('menu').classList.add('hidden');
+    if (state === 'over') { newGame(); state = 'ready'; }
+    else if (state === 'pause') state = 'play';
+  }
+  $('start').onclick = closeMenu;
+  $('open-menu').onclick = openMenu;
+  $('reset').onclick = () => { for (const k in OPTS) set[k] = OPTS[k].def; save(); buildMenu(); applyWorld(); newGame(); };
+  $('sound').onclick = () => { sound = !sound; try { localStorage.setItem('stack.sound', sound ? '1' : '0'); } catch (e) {} updSound(); };
+  cv.addEventListener('pointerdown', (e) => { e.preventDefault(); if (state === 'over') { if (overT > 0.5) { newGame(); state = 'ready'; } return; } place(); });
+  addEventListener('keydown', (e) => {
+    const k = e.key;
+    if (k === 'Escape' || k === 'p' || k === 'P') { e.preventDefault(); menuOpen() ? closeMenu() : openMenu(); return; }
+    if (menuOpen()) { if (k === 'Enter' || k === ' ') { e.preventDefault(); closeMenu(); } return; }
+    if (k === 'm' || k === 'M') return $('sound').click();
+    if (k === ' ' || k === 'Enter' || k === 'ArrowDown' || k === 'ArrowUp' || k === 'w' || k === 's') {
+      e.preventDefault(); if (e.repeat) return;
+      if (state === 'over') { if (overT > 0.5) { newGame(); state = 'ready'; } return; }
+      place();
+    }
+  });
+  addEventListener('blur', () => { if (state === 'play') openMenu(); });
+
+  // ---------- Zeichnen ----------
+  let scale = 1, dpr = 1, VH = 600;
+  function resize() {
+    dpr = Math.min(devicePixelRatio || 1, 2);
+    const maxW = Math.min(innerWidth - 24, 520), maxH = innerHeight - 54 - 36;
+    scale = Math.min(maxW / W, maxH / 560);
+    VH = maxH / scale;
+    cv.width = W * scale * dpr; cv.height = maxH * dpr; cv.style.width = W * scale + 'px'; cv.style.height = maxH + 'px';
+  }
+  function applyWorld() {
+    const w = WORLDS[v('world')];
+    $('hud').style.background = w.hud; $('frame').style.background = w.frame;
+    document.body.style.background = `radial-gradient(120% 90% at 50% 0%, ${w.page[0]} 0%, ${w.page[1]} 55%, ${w.page[2]} 100%) fixed ${w.page[1]}`;
+    document.querySelector('meta[name=theme-color]').content = w.hud;
+  }
+  function rr(x, y, w, h, r) { ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, w, h, r) : ctx.rect(x, y, w, h); }
+  const sy = (y) => VH - 110 - (y - camY); // Spiel-y → Bildschirm-y
+  function block(b, col) {
+    const y = sy(b.y) - BH, r = 7;
+    ctx.fillStyle = 'rgba(0,0,0,.18)'; rr(b.x, y + 4, b.w, BH, r); ctx.fill();
+    ctx.fillStyle = col; rr(b.x, y, b.w, BH - 2, r); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.28)'; rr(b.x + 5, y + 4, Math.max(0, b.w - 10), 6, 3); ctx.fill();
+  }
+  function draw() {
+    const w = WORLDS[v('world')];
+    ctx.setTransform(dpr * scale, 0, 0, dpr * scale, 0, 0);
+    // Himmel wird mit der Höhe dunkler bzw. bunter
+    const k = Math.min(1, camY / 4000);
+    const g = ctx.createLinearGradient(0, 0, 0, VH);
+    g.addColorStop(0, k > 0.5 && v('world') !== 'night' ? '#2b2e70' : w.sky[0]); g.addColorStop(1, w.sky[1]);
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, VH);
+    if (k > 0.02) { ctx.fillStyle = `rgba(13,5,32,${k * 0.6})`; ctx.fillRect(0, 0, W, VH); }
+    // Sterne in großer Höhe
+    if (k > 0.3) { ctx.fillStyle = `rgba(255,255,255,${(k - 0.3)})`; for (let i = 0; i < 40; i++) ctx.fillRect((i * 97) % W, ((i * 53 + camY * 0.05) % VH), 2, 2); }
+    // Boden mit Rasen
+    const gy = sy(0);
+    if (gy < VH + 10) {
+      const c = 24;
+      for (let y = 0; gy + y * c < VH; y++) for (let x = 0; x * c < W; x++) { ctx.fillStyle = w.grass[(x + y) & 1]; ctx.fillRect(x * c, gy + y * c, c + 1, c + 1); }
+      ctx.fillStyle = w.ground; ctx.fillRect(0, gy, W, 6);
+    }
+    // Turm: nur sichtbare Blöcke zeichnen
+    for (const b of stack) { const y = sy(b.y); if (y < -BH || y > VH + BH) continue; block(b, b.i === 0 ? w.ground : color(b.i)); }
+    for (const wv of waves) { ctx.strokeStyle = `rgba(255,255,255,${wv.a})`; ctx.lineWidth = 3; const grow = (1 - wv.a) * 14; rr(wv.x - grow, sy(wv.y) - BH - grow, wv.w + grow * 2, BH + grow * 2, 9); ctx.stroke(); }
+    if (cur && state !== 'over') block(cur, color(cur.i));
+    for (const f of falling) {
+      ctx.save(); const cx = f.x + f.w / 2, cy = sy(f.y) - BH / 2;
+      ctx.translate(cx, cy); ctx.rotate(f.rot); ctx.translate(-cx, -cy);
+      block(f, color(f.i)); ctx.restore();
+    }
+    // Perfekt-Anzeige und Höhe
+    ctx.textAlign = 'center';
+    if (combo >= 2 && state === 'play') { ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.font = '700 22px Fredoka, sans-serif'; ctx.fillText('Perfekt × ' + combo, W / 2, 46); }
+    if (state === 'ready') { ctx.fillStyle = 'rgba(20,35,10,.75)'; rr(W / 2 - 120, VH / 2 - 70, 240, 54, 16); ctx.fill(); ctx.fillStyle = '#fff'; ctx.font = '600 18px Fredoka, sans-serif'; ctx.fillText('Tippen zum Ablegen', W / 2, VH / 2 - 37); }
+    ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.font = '700 46px Fredoka, sans-serif'; ctx.fillText(score, W / 2, 100);
+  }
+
+  let last = performance.now();
+  function frame(now) { const dt = Math.min((now - last) / 1000, 1 / 30); last = now; update(dt); draw(); requestAnimationFrame(frame); }
+  addEventListener('resize', resize);
+  buildMenu(); applyWorld(); updSound(); newGame(); resize(); openMenu();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
