@@ -1,4 +1,4 @@
-# Mammut Games
+# Arcadia
 
 Eine Sammlung kleiner Browserspiele. Die Startseite (`index.html`) zeigt alle Spiele; jedes Spiel liegt in einem eigenen Ordner.
 
@@ -71,7 +71,7 @@ Kurz nach dem Erreichen eines Feldes zählt ein Tastendruck noch für dieses Fel
 
 ## Dateien
 
-- `index.html` – Startseite von Mammut Games
+- `index.html` – Startseite von Arcadia
 - `snake/index.html` – Seite und Menü von Snake
 - `snake/style.css` – Aussehen
 - `snake/game.js` – Spiellogik und Grafik

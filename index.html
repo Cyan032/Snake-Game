@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#5b4636">
+<meta name="theme-color" content="#241757">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Mammut Games">
-<meta name="description" content="Mammut Games – kleine Browserspiele zum Sofort-Losspielen.">
-<title>Mammut Games</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%235b4636'/%3E%3Cellipse cx='34' cy='30' rx='20' ry='15' fill='%23a1795a'/%3E%3Ccircle cx='17' cy='26' r='11' fill='%23a1795a'/%3E%3Cpath d='M10 30c-2 8 0 16 6 18' stroke='%23a1795a' stroke-width='6' fill='none' stroke-linecap='round'/%3E%3Cpath d='M18 34c-6 4-6 10-1 12' stroke='%23fff3e0' stroke-width='3.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<meta name="apple-mobile-web-app-title" content="Arcadia">
+<meta name="description" content="Arcadia – Browserspiele zum Sofort-Losspielen.">
+<title>Arcadia</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23241757'/%3E%3Crect x='12' y='40' width='40' height='14' rx='6' fill='%236c4cf5'/%3E%3Crect x='29' y='20' width='6' height='22' rx='3' fill='%23cfc6ff'/%3E%3Ccircle cx='32' cy='17' r='9' fill='%23ff4fa3'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -16,14 +16,14 @@
   * { box-sizing: border-box; }
   html, body { margin: 0; min-height: 100%; }
   body {
-    font-family: 'Fredoka', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color: #2e2219;
-    background: #4a3a2c radial-gradient(120% 80% at 50% 0%, #8a6a4c 0%, #5b4636 50%, #33271d 100%) fixed;
+    font-family: 'Fredoka', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color: #241a3d;
+    background: #1c1442 radial-gradient(120% 80% at 50% 0%, #4b2fa8 0%, #241757 50%, #120c2c 100%) fixed;
     padding: 28px 16px 40px;
   }
   .wrap { max-width: 920px; margin: 0 auto; }
-  header { text-align: center; color: #fff8ef; margin: 10px 0 30px; }
-  .mammut { width: 150px; height: 110px; filter: drop-shadow(0 8px 14px rgba(0,0,0,.3)); animation: stomp 3s ease-in-out infinite; }
-  h1 { margin: 6px 0 4px; font-size: clamp(38px, 8vw, 60px); font-weight: 700; letter-spacing: .5px; }
+  header { text-align: center; color: #fff; margin: 10px 0 30px; }
+  .logo { width: 150px; height: 110px; filter: drop-shadow(0 8px 14px rgba(0,0,0,.3)); animation: stomp 3s ease-in-out infinite; }
+  h1 { margin: 6px 0 4px; font-size: clamp(42px, 9vw, 68px); font-weight: 700; letter-spacing: 2px; text-shadow: 0 0 18px rgba(255,79,163,.6), 0 4px 0 #3b2a7a; }
   header p { margin: 0; font-size: 18px; opacity: .85; }
   .games { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 18px; }
   .game {
@@ -35,31 +35,29 @@
   .thumb svg { width: 80%; height: 80%; }
   .info { padding: 14px 18px 18px; }
   .info h2 { margin: 0 0 4px; font-size: 24px; }
-  .info p { margin: 0 0 12px; color: #6d5b4c; font-size: 15px; line-height: 1.45; }
+  .info p { margin: 0 0 12px; color: #5d5278; font-size: 15px; line-height: 1.45; }
   .btn { display: inline-block; padding: 9px 18px; border-radius: 12px; background: #3f6ff0; color: #fff; font-weight: 600; box-shadow: 0 4px 0 #2b51c4; }
   .game.soon { opacity: .7; }
-  .soon .thumb { background: repeating-linear-gradient(45deg, #efe6dc 0 14px, #e7dccf 14px 28px); color: #a08b78; font-size: 44px; font-weight: 700; }
-  .soon .btn { background: #d9cdbf; color: #6d5b4c; box-shadow: 0 4px 0 #c4b5a4; }
-  footer { text-align: center; color: #e9dccd; opacity: .7; margin-top: 34px; font-size: 14px; }
+  .soon .thumb { background: repeating-linear-gradient(45deg, #ece8fb 0 14px, #e1dbf7 14px 28px); color: #8f84b5; font-size: 44px; font-weight: 700; }
+  .soon .btn { background: #ddd6f5; color: #5d5278; box-shadow: 0 4px 0 #c3b9ea; }
+  footer { text-align: center; color: #cfc6ff; opacity: .7; margin-top: 34px; font-size: 14px; }
   @keyframes stomp { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px) rotate(-1deg); } }
-  @media (prefers-reduced-motion: reduce) { .mammut { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .logo { animation: none; } }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <svg class="mammut" viewBox="0 0 150 110" aria-hidden="true">
-      <ellipse cx="88" cy="58" rx="48" ry="34" fill="#a1795a"/>
-      <rect x="56" y="78" width="16" height="26" rx="7" fill="#8c6649"/>
-      <rect x="104" y="78" width="16" height="26" rx="7" fill="#8c6649"/>
-      <circle cx="48" cy="46" r="27" fill="#a1795a"/>
-      <path d="M30 58c-10 14-8 30 4 38" stroke="#a1795a" stroke-width="13" fill="none" stroke-linecap="round"/>
-      <path d="M44 66c-16 6-20 20-10 28" stroke="#fff3e0" stroke-width="7" fill="none" stroke-linecap="round"/>
-      <ellipse cx="66" cy="40" rx="11" ry="16" fill="#8c6649"/>
-      <circle cx="40" cy="40" r="4.5" fill="#2e2219"/><circle cx="41.5" cy="38.5" r="1.5" fill="#fff"/>
-      <path d="M60 22c6-8 18-10 26-4" stroke="#7a573d" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <svg class="logo" viewBox="0 0 120 110" aria-hidden="true">
+      <rect x="18" y="70" width="84" height="30" rx="12" fill="#3b2a7a"/>
+      <rect x="18" y="64" width="84" height="26" rx="12" fill="#6c4cf5"/>
+      <rect x="56" y="30" width="8" height="40" rx="4" fill="#cfc6ff"/>
+      <circle cx="60" cy="26" r="17" fill="#ff4fa3"/>
+      <circle cx="54" cy="20" r="5" fill="#ffffff" opacity=".7"/>
+      <circle cx="34" cy="77" r="6" fill="#ffd23f"/>
+      <circle cx="86" cy="77" r="6" fill="#3fe0d0"/>
     </svg>
-    <h1>Mammut Games</h1>
+    <h1>Arcadia</h1>
     <p>Such dir ein Spiel aus und leg los!</p>
   </header>
   <main class="games">
@@ -88,7 +86,7 @@
       </div>
     </div>
   </main>
-  <footer>Mammut Games</footer>
+  <footer>Arcadia</footer>
 </div>
 </body>
 </html>
