@@ -105,7 +105,7 @@
   const cv = $('board'), main = cv.getContext('2d');
   let ctx = main;
   // Retro: Szene wird klein gezeichnet und grob hochskaliert (Pixel-Look)
-  const PX = 9, offCv = document.createElement('canvas'), offCtx = offCv.getContext('2d');
+  const PX = 20, offCv = document.createElement('canvas'), offCtx = offCv.getContext('2d');
   let night = false;
 
   // ---------- Einstellungen ----------
@@ -464,7 +464,7 @@
         ctx.beginPath(); ctx.arc(COLS * PX * 0.78, PX * 2.2, PX * 0.9, 0, 7); ctx.fill();
         ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(COLS * PX * 0.78 + PX * 0.45, PX * 2.0, PX * 0.8, 0, 7); ctx.fill();
         ctx.fillStyle = '#9a9a9a';
-        for (let i = 0; i < 14; i++) ctx.fillRect(((i * 53) % (COLS * PX)), 4 + (i * 29) % (PX * 5), 2, 2);
+        for (let i = 0; i < 14; i++) ctx.fillRect(((i * 53 * PX / 9) % (COLS * PX)), 4 + (i * 29) % (PX * 5), 4, 4);
       }
       // Kanten hart machen: jedes Pixel auf einen von vier Grautönen runden
       const img = ctx.getImageData(0, 0, offCv.width, offCv.height), d = img.data;
