@@ -6,9 +6,10 @@
 <meta name="theme-color" content="#4a752c">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Stack – Arcadia</title>
-<script src="/arcadia.js?v=6"></script>
+<script src="/arcadia.js?v=7"></script>
 <link rel="icon" type="image/png" sizes="64x64" href="/icons/favicon-64.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -183,6 +184,7 @@
     spawn();
   }
   function gameOver() {
+    window.Arcadia && Arcadia.xp(Math.min(120, 5 + score), 'Stack');
     state = 'over'; overT = 0; beep(160, 0.45, 'sawtooth', 0.06);
     if (score > getBest()) { try { localStorage.setItem(bestKey(), score); } catch (e) {} }
     setTimeout(() => { if (state === 'over' && !menuOpen()) openMenu(); }, 1200);

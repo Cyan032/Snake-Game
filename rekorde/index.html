@@ -6,9 +6,10 @@
 <meta name="theme-color" content="#0d0520">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Rekorde – Arcadia</title>
-<script src="/arcadia.js?v=6"></script>
+<script src="/arcadia.js?v=7"></script>
 <link rel="icon" type="image/png" sizes="64x64" href="/icons/favicon-64.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Monoton&family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -205,14 +206,14 @@
     const el = document.getElementById('konto');
     if (!A) { el.remove(); return; }
     if (!A.code) {
-      el.innerHTML = `<div class="head"><h2>Mein Konto</h2></div><p class="none">Du spielst ohne Konto. Deine Rekorde bleiben nur auf diesem Gerät und erscheinen nicht in der weltweiten Liste.</p>
+      el.innerHTML = `<div class="head"><h2>Mein Konto</h2></div><p class="none">Du spielst ohne Konto (Level ${A.levelOf(A.xpTotal)}, ${A.xpTotal} XP). Deine Rekorde und dein Level bleiben nur auf diesem Gerät. Beim Registrieren nimmst du dein Level mit.</p>
         <div class="krow"><button class="kbtn main" id="k-reg">Registrieren</button><button class="kbtn" id="k-log">Anmelden</button></div>`;
       el.querySelector('#k-reg').onclick = () => A.showGate('reg');
       el.querySelector('#k-log').onclick = () => A.showGate('log');
       return;
     }
     el.innerHTML = `<div class="head"><h2>Mein Konto</h2></div>
-      <div class="big">${tile('Name', esc(A.name))}</div>
+      <div class="big">${tile('Name', esc(A.name))}${tile('Level ' + A.levelOf(A.xpTotal), A.xpTotal + ' XP', 'Nächstes Level ab ' + A.xpFor(A.levelOf(A.xpTotal) + 1) + ' XP')}</div>
       <p class="note" style="margin-top:0">Dein Code (zum Anmelden auf anderen Geräten):</p>
       <div class="krow"><span class="kcode hide" id="k-code">${A.fmtCode(A.code)}</span>
         <button class="kbtn" id="k-show">Zeigen</button><button class="kbtn" id="k-copy">Kopieren</button></div>
@@ -244,7 +245,7 @@
     if (!wdata) return;
     if (wdata.error) { box.innerHTML = `<p class="none">${esc(wdata.error)}</p>`; return; }
     const rows = wdata[wsel] || [], unit = WB.find((w) => w[0] === wsel)[2], me = A && A.id;
-    box.innerHTML = rows.length ? `<table>${rows.map((r, i) => `<tr class="${r.id === me ? 'me' : ''}"><td class="rk">${i + 1}.</td><td>${esc(r.name)}${r.id === me ? ' (du)' : ''}</td><td>${unit === 't' ? fmtMs(r.score) : r.score + unit}</td></tr>`).join('')}</table>`
+    box.innerHTML = rows.length ? `<table>${rows.map((r, i) => `<tr class="${r.id === me ? 'me' : ''}"><td class="rk">${i + 1}.</td><td>${esc(r.name)}${r.id === me ? ' (du)' : ''} <span class="n">Lv ${r.lv || 1}</span></td><td>${unit === 't' ? fmtMs(r.score) : r.score + unit}</td></tr>`).join('')}</table>`
       : `<p class="none">Noch niemand drin. Sei der Erste!</p>`;
   }
   async function welt(fresh) {

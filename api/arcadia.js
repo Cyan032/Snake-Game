@@ -31,6 +31,8 @@ async function redis(cmds) {
   const out = await r.json();
   return out.map((x) => (x.error ? null : x.result));
 }
+const xpFor = (L) => 50 * L * (L - 1);
+function levelOf(xp) { let L = 1; while (xpFor(L + 1) <= xp) L++; return L; }
 const uidOf = (code) => crypto.createHash('sha256').update('arcadia:' + code).digest('hex').slice(0, 20);
 const cleanCode = (c) => String(c || '').replace(/\D/g, '');
 function cleanName(n) {
@@ -67,12 +69,13 @@ module.exports = async (req, res) => {
       if (!boards.length) return send(400, { error: 'Unbekannte Liste.' });
       const lists = await redis(boards.map((b) => BOARDS[b].low ? ['ZRANGE', 'lb:' + b, 0, 9, 'WITHSCORES'] : ['ZRANGE', 'lb:' + b, 0, 9, 'REV', 'WITHSCORES']));
       const uids = [...new Set(lists.flatMap((l) => (l || []).filter((_, i) => i % 2 === 0)))];
-      const names = uids.length ? (await redis([['HMGET', 'names', ...uids]]))[0] : [];
+      const [names, lvs] = uids.length ? await redis([['HMGET', 'names', ...uids], ['HMGET', 'lv', ...uids]]) : [[], []];
       const nameOf = Object.fromEntries(uids.map((u, i) => [u, names[i] || '???']));
+      const lvOf = Object.fromEntries(uids.map((u, i) => [u, +lvs[i] || 1]));
       const result = {};
       boards.forEach((b, i) => {
         const l = lists[i] || [], rows = [];
-        for (let j = 0; j < l.length; j += 2) rows.push({ id: l[j].slice(0, 6), name: nameOf[l[j]], score: +l[j + 1] });
+        for (let j = 0; j < l.length; j += 2) rows.push({ id: l[j].slice(0, 6), name: nameOf[l[j]], lv: lvOf[l[j]], score: +l[j + 1] });
         result[b] = rows;
       });
       return send(200, result, 'public, s-maxage=60, stale-while-revalidate=120');
@@ -89,8 +92,10 @@ module.exports = async (req, res) => {
       let code = '';
       for (let i = 0; i < 12; i++) code += crypto.randomInt(10);
       const uid = uidOf(code);
-      await redis([['HSET', 'u:' + uid, 'name', name, 'created', Date.now()], ['HSET', 'names', uid, name]]);
-      return send(200, { code, name, id: uid.slice(0, 6) });
+      // Erfahrung, die vorher ohne Konto gesammelt wurde, darf mit (begrenzt)
+      const xp = Math.max(0, Math.min(3000, Math.floor(Number(b.xp) || 0)));
+      await redis([['HSET', 'u:' + uid, 'name', name, 'created', Date.now(), 'xp', xp], ['HSET', 'names', uid, name], ['HSET', 'lv', uid, levelOf(xp)]]);
+      return send(200, { code, name, id: uid.slice(0, 6), xp });
     }
 
     const code = cleanCode(b.code);
@@ -104,15 +109,23 @@ module.exports = async (req, res) => {
 
     if (action === 'login') {
       const keys = Object.keys(BOARDS);
-      const scores = await redis(keys.map((k) => ['ZSCORE', 'lb:' + k, uid]));
+      const scores = await redis([...keys.map((k) => ['ZSCORE', 'lb:' + k, uid]), ['HGET', 'u:' + uid, 'xp']]);
       const mine = {}; keys.forEach((k, i) => { if (scores[i] !== null) mine[k] = +scores[i]; });
-      return send(200, { name, id: uid.slice(0, 6), scores: mine });
+      return send(200, { name, id: uid.slice(0, 6), scores: mine, xp: +scores[keys.length] || 0 });
     }
     if (action === 'rename') {
       const n = cleanName(b.name);
       if (!n) return send(400, { error: 'Dieser Name geht nicht.' });
       await redis([['HSET', 'u:' + uid, 'name', n], ['HSET', 'names', uid, n]]);
       return send(200, { name: n });
+    }
+    if (action === 'xp') {
+      const n = Math.floor(Number(b.n) || 0);
+      if (n < 1 || n > 150) return send(400, { error: 'Ungültige XP.' });
+      if (await limited('rlxp:' + uid, 30, 60)) return send(429, { error: 'Zu viele XP auf einmal.' });
+      const [xp] = await redis([['HINCRBY', 'u:' + uid, 'xp', n]]);
+      await redis([['HSET', 'lv', uid, levelOf(+xp)]]);
+      return send(200, { xp: +xp, level: levelOf(+xp) });
     }
     if (action === 'submit') {
       // mehrere Rekorde auf einmal: { scores: { board: wert } }

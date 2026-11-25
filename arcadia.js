@@ -66,13 +66,15 @@
     get name() { return get('arcadia.name', ''); },
     get id() { return get('arcadia.id', ''); },
     async register(name) {
-      const j = await api({ action: 'register', name: name || randomName() });
+      const j = await api({ action: 'register', name: name || randomName(), xp: get('arcadia.xp', 0) });
       put('arcadia.code', j.code); put('arcadia.name', j.name); put('arcadia.id', j.id); put('arcadia.sent', {});
+      put('arcadia.xp', j.xp || 0); put('arcadia.xpq', 0); showLevel();
       return j;
     },
     async login(code) {
       const j = await api({ action: 'login', code });
       put('arcadia.code', String(code).replace(/\D/g, '')); put('arcadia.name', j.name); put('arcadia.id', j.id); put('arcadia.sent', j.scores || {});
+      put('arcadia.xp', j.xp || 0); put('arcadia.xpq', 0); showLevel();
       await A.sync(true);
       return j;
     },
@@ -80,7 +82,7 @@
       const j = await api({ action: 'rename', code: A.code, name });
       put('arcadia.name', j.name); return j;
     },
-    logout() { setTimeout(() => dispatchEvent(new Event('arcadia:account'))); try { LS.removeItem('arcadia.id'); LS.removeItem('arcadia.code'); LS.removeItem('arcadia.name'); LS.removeItem('arcadia.sent'); } catch (e) {} },
+    logout() { setTimeout(() => { dispatchEvent(new Event('arcadia:account')); showLevel(); }); try { LS.removeItem('arcadia.xp'); LS.removeItem('arcadia.xpq'); LS.removeItem('arcadia.id'); LS.removeItem('arcadia.code'); LS.removeItem('arcadia.name'); LS.removeItem('arcadia.sent'); } catch (e) {} },
     async top(boards) {
       const r = await fetch('/api/arcadia?boards=' + encodeURIComponent(boards.join(',')));
       if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || 'Bestenliste nicht erreichbar.');
@@ -102,6 +104,62 @@
       return todo;
     },
   };
+
+  // ---------- Erfahrung und Level ----------
+  // Level L braucht insgesamt 50·L·(L−1) XP: Level 2 ab 100, Level 3 ab 300, Level 10 ab 4500 …
+  const xpFor = (L) => 50 * L * (L - 1);
+  function levelOf(xp) { let L = 1; while (xpFor(L + 1) <= xp) L++; return L; }
+  A.levelOf = levelOf; A.xpFor = xpFor;
+  Object.defineProperty(A, 'xpTotal', { get: () => get('arcadia.xp', 0) });
+  let xpTimer = 0;
+  async function flushXp() {
+    const q = get('arcadia.xpq', 0); if (!q || !A.code) return;
+    try {
+      const j = await api({ action: 'xp', code: A.code, n: Math.min(q, 150) });
+      put('arcadia.xpq', Math.max(0, get('arcadia.xpq', 0) - Math.min(q, 150)));
+      if (j.xp != null) put('arcadia.xp', Math.max(j.xp + get('arcadia.xpq', 0), get('arcadia.xp', 0)));
+      if (get('arcadia.xpq', 0)) xpTimer = setTimeout(flushXp, 2000);
+    } catch (e) {}
+  }
+  A.xp = function (n, game) {
+    n = Math.max(0, Math.round(n || 0)); if (!n) return;
+    const before = levelOf(get('arcadia.xp', 0)), total = get('arcadia.xp', 0) + n;
+    put('arcadia.xp', total); put('arcadia.xpq', get('arcadia.xpq', 0) + n);
+    const after = levelOf(total);
+    toast(`+${n} XP`, after > before ? `Level ${after} erreicht!` : '');
+    showLevel();
+    clearTimeout(xpTimer); xpTimer = setTimeout(flushXp, 1200);
+  };
+  function toast(main, sub) {
+    if (!document.body) return;
+    if (!document.getElementById('arc-toast-css')) {
+      const st = document.createElement('style'); st.id = 'arc-toast-css';
+      st.textContent = `.arc-toast { position: fixed; left: 50%; bottom: 22px; z-index: 99998; transform: translate(-50%, 20px); opacity: 0; pointer-events: none;
+        padding: 9px 18px; border-radius: 14px; background: rgba(16,26,10,.88); color: #fff; font: 600 16px 'Fredoka', system-ui, sans-serif; text-align: center;
+        box-shadow: 0 8px 24px rgba(0,0,0,.3); transition: transform .3s, opacity .3s; }
+        .arc-toast.on { transform: translate(-50%, 0); opacity: 1; } .arc-toast b { color: #ffd54f; } .arc-toast small { display: block; color: #a5f3a0; font-size: 15px; }`;
+      document.head.appendChild(st);
+    }
+    const t = document.createElement('div'); t.className = 'arc-toast';
+    t.innerHTML = `<b>${main}</b>${sub ? `<small>${sub}</small>` : ''}`;
+    document.body.appendChild(t);
+    requestAnimationFrame(() => t.classList.add('on'));
+    setTimeout(() => { t.classList.remove('on'); setTimeout(() => t.remove(), 400); }, sub ? 2600 : 1600);
+  }
+  // Alle Elemente mit data-arc-level zeigen Level und Fortschritt
+  function showLevel() {
+    const xp = get('arcadia.xp', 0), L = levelOf(xp), a = xpFor(L), b = xpFor(L + 1), pct = Math.round(((xp - a) / (b - a)) * 100);
+    document.querySelectorAll('[data-arc-level]').forEach((el) => {
+      el.innerHTML = `<span class="lv">Level ${L}</span><span class="nm">${A.code ? esc(A.name) : 'Gast'}</span><span class="bar"><i style="width:${pct}%"></i></span><span class="xp">${xp - a} / ${b - a} XP</span>`;
+    });
+  }
+  A.showLevel = showLevel;
+  addEventListener('DOMContentLoaded', () => { showLevel(); flushXp(); });
+
+  // ---------- Als App: Offline-Speicher (Service Worker) ----------
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+    addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+  }
 
   // Wenn ein Spiel einen Rekord speichert, kurz danach automatisch hochladen
   let timer = 0;

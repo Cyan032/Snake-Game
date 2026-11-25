@@ -6,9 +6,10 @@
 <meta name="theme-color" content="#4a752c">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Solitaire – Arcadia</title>
-<script src="/arcadia.js?v=6"></script>
+<script src="/arcadia.js?v=7"></script>
 <link rel="icon" type="image/png" sizes="64x64" href="/icons/favicon-64.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -284,6 +285,7 @@
     }
   }
   function win() {
+    window.Arcadia && Arcadia.xp(v('draw') === 3 ? 90 : 60, 'Solitaire');
     won = true; clearInterval(timer); playing = false;
     const key = 'best' + v('draw'), b = stat(key, 0), wins = stat('wins', 0) + 1; setStat('wins', wins);
     if (!b || elapsed < b) setStat(key, elapsed);

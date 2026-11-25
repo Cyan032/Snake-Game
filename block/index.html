@@ -6,9 +6,10 @@
 <meta name="theme-color" content="#4a752c">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Blockfall – Arcadia</title>
-<script src="/arcadia.js?v=6"></script>
+<script src="/arcadia.js?v=7"></script>
 <link rel="icon" type="image/png" sizes="64x64" href="/icons/favicon-64.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -253,6 +254,7 @@
     clearing = null; holdUsed = false; spawn();
   }
   function gameOver() {
+    window.Arcadia && Arcadia.xp(Math.min(120, 5 + lines * 3), 'Blockfall');
     state = 'over'; beep(150, 0.5, 'sawtooth', 0.06, 0.5);
     if (score > best) { best = score; try { localStorage.setItem(bestKey(), best); } catch (e) {} }
     setTimeout(() => { if (state === 'over' && !menuOpen()) openMenu(); }, 700);

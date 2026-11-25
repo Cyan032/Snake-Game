@@ -6,9 +6,10 @@
 <meta name="theme-color" content="#4a752c">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Vier in Reihe – Arcadia</title>
-<script src="/arcadia.js?v=6"></script>
+<script src="/arcadia.js?v=7"></script>
 <link rel="icon" type="image/png" sizes="64x64" href="/icons/favicon-64.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -252,11 +253,12 @@
     const line = lineAt(c, r, p);
     if (line) {
       winner = p; winLine = line; score[p]++;
+      window.Arcadia && Arcadia.xp(!vsAI() ? 5 : p === 1 ? [0, 10, 20, 40, 80][v('opp')] : 3, 'Vier in Reihe');
       if (vsAI()) { addStat(v('opp'), p === 1 ? 'w' : 'l'); }
       [523, 659, 784].forEach((f, i) => setTimeout(() => beep(p === 1 || !vsAI() ? f : f / 2, 0.15), i * 110));
       busy = false; hud(); later(); return;
     }
-    if (full()) { winner = 3; score[0]++; if (vsAI()) addStat(v('opp'), 'd'); busy = false; hud(); later(); return; }
+    if (full()) { window.Arcadia && Arcadia.xp(vsAI() ? [0, 5, 10, 20, 40][v('opp')] : 5, 'Vier in Reihe'); winner = 3; score[0]++; if (vsAI()) addStat(v('opp'), 'd'); busy = false; hud(); later(); return; }
     turn = 3 - p; busy = false; hud();
     if (vsAI() && turn === 2) aiMove();
   }

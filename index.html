@@ -8,9 +8,10 @@
 <meta name="apple-mobile-web-app-title" content="Arcadia">
 <meta name="description" content="Arcadia – Browserspiele zum Sofort-Losspielen.">
 <title>Arcadia</title>
-<script src="/arcadia.js?v=6"></script>
+<script src="/arcadia.js?v=7"></script>
 <link rel="icon" type="image/png" sizes="64x64" href="/icons/favicon-64.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -137,6 +138,13 @@
   .upprev b { position: absolute; left: calc(20% + 18px); bottom: 44px; width: 20px; height: 20px; border-radius: 50%; background: var(--pink); box-shadow: 0 0 14px var(--pink);
     animation: ub 1.8s ease-in-out infinite; }
   @keyframes ub { 0%, 100% { transform: translate(0, 0); } 25% { transform: translate(60px, -60px); } 50% { transform: translate(124px, -42px); } 75% { transform: translate(50px, -96px); } }
+  .lvlbox { display: inline-grid; grid-template-columns: auto 1fr; gap: 2px 10px; align-items: center; margin-top: 14px; padding: 9px 16px; min-width: 240px;
+    border-radius: 14px; text-decoration: none; color: #fff; background: rgba(20,8,48,.7); border: 2px solid rgba(41,240,255,.5); box-shadow: 0 0 14px rgba(41,240,255,.25); text-align: left; }
+  .lvlbox .lv { grid-row: span 2; font-weight: 700; font-size: 18px; color: var(--cyan); text-shadow: 0 0 10px rgba(41,240,255,.6); }
+  .lvlbox .nm { font-weight: 600; font-size: 14px; color: #ffe4f3; }
+  .lvlbox .bar { height: 7px; border-radius: 9px; background: rgba(255,255,255,.12); overflow: hidden; }
+  .lvlbox .bar i { display: block; height: 100%; border-radius: 9px; background: linear-gradient(90deg, var(--pink), var(--cyan)); }
+  .lvlbox .xp { grid-column: 2; font-size: 12px; color: #a99ad8; }
   footer { position: relative; z-index: 1; text-align: center; margin-top: 40px; font-size: 13px; letter-spacing: 3px; color: #a99ad8; }
 
   @keyframes blink { 50% { opacity: .35; } }
@@ -154,6 +162,7 @@
     <p class="tag">Deine Spielhalle im Browser</p>
     <span class="insert">Press Start</span>
     <div><a class="records" href="/rekorde/">Rekorde</a></div>
+    <a class="lvlbox" href="/rekorde/#konto" data-arc-level></a>
   </header>
 
   <main class="games">

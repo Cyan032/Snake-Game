@@ -19,6 +19,10 @@ Die Seite `rekorde/` zeigt die Rekorde aller Spiele. Als Rekord zählt nur, was 
 
 Konten und die weltweite Bestenliste laufen über `api/arcadia.js` (Vercel-Funktion) mit einer Upstash-Redis-Datenbank. Ein Konto ist ein 12-stelliger Code, in der Datenbank liegt nur ein Hash davon. `arcadia.js` wird auf allen Seiten geladen, zeigt beim ersten Besuch Registrieren/Anmelden und lädt neue faire Rekorde automatisch hoch.
 
+Jede Runde gibt Erfahrungspunkte (XP), daraus ergibt sich das Level (Level L ab 50·L·(L−1) XP). Ohne Konto bleibt das Level im Browser, beim Registrieren wird es mitgenommen.
+
+Arcadia ist als App installierbar (`manifest.webmanifest`) und dank `sw.js` auch offline spielbar. Seiten kommen immer zuerst frisch aus dem Netz, nur ohne Verbindung aus dem Speicher.
+
 Ein neues Spiel bekommt einen eigenen Ordner und eine Karte auf der Startseite.
 
 # Snake

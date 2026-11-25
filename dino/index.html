@@ -6,9 +6,10 @@
 <meta name="theme-color" content="#4a752c">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Dino Runner – Arcadia</title>
-<script src="/arcadia.js?v=6"></script>
+<script src="/arcadia.js?v=7"></script>
 <link rel="icon" type="image/png" sizes="64x64" href="/icons/favicon-64.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Press+Start+2P&display=swap" rel="stylesheet">
 <style>
@@ -285,6 +286,7 @@
   addEventListener('blur', () => { jumpHeld = false; duckHeld = false; if (state === 'play') openMenu(); });
 
   function die() {
+    window.Arcadia && Arcadia.xp(Math.min(120, 5 + Math.floor(score / 15)), 'Dino Runner');
     state = 'over'; deadT = 0; shake = 0.35; beep(200, 0.35, 'sawtooth', 0.07, 0.4);
     if (score > best) { best = score; try { localStorage.setItem(bestKey(), best); } catch (e) {} $('best').textContent = best; }
     setTimeout(() => { if (state === 'over' && !menuOpen()) openMenu(); }, 800);

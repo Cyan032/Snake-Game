@@ -972,6 +972,7 @@
     g.oldBest = old ? old.t : null;
     rec[lv.id] = { t: old ? Math.min(old.t, g.elapsed) : g.elapsed, s: Math.max(old ? old.s : 0, g.starsGot) };
     store.set('park', rec);
+    window.Arcadia && Arcadia.xp(20 + g.starsGot * 10, 'Parkour');
     burst(g.goal.x, g.goal.y, ['#ff5252', '#ffd54f', '#69f0ae', '#40c4ff', '#e040fb'], g.interval * 0.5, now, 40);
     Sound.win();
     updateHud();
@@ -1006,6 +1007,7 @@
     if (g.level) { crashParkour(); return; }
     g.state = 'over';
     g.result = reason;
+    window.Arcadia && Arcadia.xp(g.mode.versus || g.mode.peaceful ? 5 : Math.min(120, 5 + scoreOf()), 'Snake');
     g.overAt = performance.now();
     if (g.chaos) endChaosFx();
     if (reason === 'win') Sound.win();

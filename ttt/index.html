@@ -6,9 +6,10 @@
 <meta name="theme-color" content="#4a752c">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Tic Tac Toe – Arcadia</title>
-<script src="/arcadia.js?v=6"></script>
+<script src="/arcadia.js?v=7"></script>
 <link rel="icon" type="image/png" sizes="64x64" href="/icons/favicon-64.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -227,6 +228,7 @@
     beep(turn === 1 ? 520 : 380, 0.07);
     const r = check(board);
     if (r) {
+      window.Arcadia && Arcadia.xp(!vsAI() ? 3 : r.p === 1 ? [0, 5, 10, 25][v('opp')] * (N > 3 ? 2 : 1) : r.p === 3 ? [0, 2, 4, 12][v('opp')] : 1, 'Tic Tac Toe');
       winner = r.p; winLine = r.l || null; score[r.p === 3 ? 0 : r.p]++;
       if (vsAI()) addStat(r.p === 3 ? 'd' : r.p === 1 ? 'w' : 'l');
       if (r.p !== 3) [523, 659, 784].forEach((f, k) => setTimeout(() => beep(r.p === 1 || !vsAI() ? f : f / 2, 0.14), k * 110));
