@@ -6,6 +6,7 @@ Eine Sammlung kleiner Browserspiele. Die Startseite (`index.html`) zeigt alle Sp
 | --- | --- |
 | Snake | `snake/` |
 | Flappy Bird | `flug/` |
+| Dino Runner | `dino/` |
 
 Ein neues Spiel bekommt einen eigenen Ordner und eine Karte auf der Startseite.
 

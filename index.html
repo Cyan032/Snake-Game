@@ -70,6 +70,12 @@
   .glider { position: absolute; left: 30%; top: 45%; width: 26px; height: 26px; border-radius: 50%; background: var(--pink);
     box-shadow: 0 0 18px var(--pink); animation: hover 1s ease-in-out infinite; }
   @keyframes hover { 50% { transform: translateY(-14px); } }
+  .dinoprev { background: repeating-conic-gradient(#aad751 0 25%, #a2d149 0 50%) 0 0/36px 36px; overflow: hidden; }
+  .dinoprev::before { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 30px; background: #8b5a2b; border-top: 8px solid #6c9e40; }
+  .dk { position: absolute; left: 22%; bottom: 30px; width: 34px; height: 46px; background: #43a047; border-radius: 18px 22px 10px 10px; animation: dj 1.4s ease-in-out infinite; }
+  .rk { position: absolute; bottom: 30px; width: 30px; height: 24px; background: #8d8f86; border-radius: 12px 12px 4px 4px; animation: rm 1.4s linear infinite; }
+  @keyframes dj { 0%, 30%, 70%, 100% { transform: none; } 50% { transform: translateY(-48px); } }
+  @keyframes rm { from { left: 105%; } to { left: -15%; } }
   footer { position: relative; z-index: 1; text-align: center; margin-top: 40px; font-size: 13px; letter-spacing: 3px; color: #a99ad8; }
 
   @keyframes blink { 50% { opacity: .35; } }
@@ -102,6 +108,14 @@
       <div class="info">
         <h2>Flappy Bird</h2>
         <p>Ein Tipp, ein Flügelschlag: Der Klassiker: tippe und flieg durch die Röhren.</p>
+        <span class="play">SPIELEN</span>
+      </div>
+    </a>
+    <a class="game" href="/dino/">
+      <div class="screen dinoprev"><span class="dk"></span><span class="rk"></span></div>
+      <div class="info">
+        <h2>Dino Runner</h2>
+        <p>Spring über Steine und Büsche und duck dich unter Bienen weg.</p>
         <span class="play">SPIELEN</span>
       </div>
     </a>
