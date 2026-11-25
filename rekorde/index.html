@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0d0520">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Rekorde – Arcadia</title>
-<script src="/arcadia.js?v=3"></script>
+<script src="/arcadia.js?v=4"></script>
 <link rel="icon" type="image/png" sizes="64x64" href="/icons/favicon-64.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
@@ -152,6 +152,11 @@
   ], ([st, ramp, size]) => ramp === 1 && size === 1), ' Pkt.',
   '„Wird schneller“ an und Spielfeld Normal. Das Start-Level ist egal, weil höhere Level schneller sind.'));
 
+  // ---------- Fruit Drop ----------
+  card('Fruit Drop', '/fruit/', comboBlock(combos('fruit.best.', [
+    ['Kiste', ['Breit', 'Normal', 'Schmal']], ['Schwerkraft', ['Leicht', 'Normal', 'Stark']],
+  ], ([box]) => box >= 1), ' Pkt.', 'Kiste Normal oder Schmal. Die breite Kiste ist leichter.'));
+
   // ---------- Vier in Reihe ----------
   {
     const s = get('vier.stats', {}), L = ['', 'Leicht', 'Mittel', 'Schwer', 'Profi'];
@@ -219,7 +224,7 @@
 
   // ---------- Weltweite Bestenliste ----------
   const WB = [['snake-classic', 'Snake Klassisch', ''], ['snake-park', 'Snake Parkour', ' ★'], ['flug', 'Flappy Bird', ' Pkt.'], ['dino', 'Dino Runner', ' m'],
-    ['block', 'Blockfall', ' Pkt.'], ['vier', 'Vier in Reihe', ' Siege'], ['sol1', 'Solitaire (1)', 't'], ['sol3', 'Solitaire (3)', 't']];
+    ['block', 'Blockfall', ' Pkt.'], ['fruit', 'Fruit Drop', ' Pkt.'], ['vier', 'Vier in Reihe', ' Siege'], ['sol1', 'Solitaire (1)', 't'], ['sol3', 'Solitaire (3)', 't']];
   let wdata = null, wsel = 'snake-classic';
   try { wsel = sessionStorage.getItem('rek.welt') || wsel; } catch (e) {}
   function wrender() {
@@ -247,7 +252,7 @@
     const del = [];
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
-      if (/^(snake\.(best|fair)\.|snake\.park$|flug\.best\.|dino\.best\.|block\.best\.|sol\.stats$|vier\.stats$|ttt\.stats$)/.test(k)) del.push(k);
+      if (/^(snake\.(best|fair)\.|snake\.park$|flug\.best\.|dino\.best\.|block\.best\.|fruit\.best\.|sol\.stats$|vier\.stats$|ttt\.stats$)/.test(k)) del.push(k);
     }
     del.forEach((k) => localStorage.removeItem(k)); location.reload();
   };

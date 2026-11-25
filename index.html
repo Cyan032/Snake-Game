@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="Arcadia">
 <meta name="description" content="Arcadia – Browserspiele zum Sofort-Losspielen.">
 <title>Arcadia</title>
-<script src="/arcadia.js?v=3"></script>
+<script src="/arcadia.js?v=4"></script>
 <link rel="icon" type="image/png" sizes="64x64" href="/icons/favicon-64.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
@@ -124,6 +124,10 @@
   .tttprev span::after { content: ''; position: absolute; left: 44px; top: 44px; width: 20px; height: 20px; border: 3px solid var(--cyan); border-radius: 50%;
     box-shadow: 0 0 10px var(--cyan); animation: tp 2s 1s infinite; }
   @keyframes tp { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+  .fruitprev { background: linear-gradient(#0d0520, #2a0d55); overflow: hidden; }
+  .fruitprev .box { position: absolute; left: 24%; right: 24%; top: 34px; bottom: 16px; border: 3px solid var(--violet); border-top: 0; border-radius: 0 0 14px 14px; box-shadow: 0 0 14px var(--violet); }
+  .fruitprev i { position: absolute; bottom: 120px; width: var(--s); height: var(--s); border-radius: 50%; border: 3px solid var(--c); box-shadow: 0 0 12px var(--c), inset 0 0 8px var(--c); animation: fd 2.2s ease-in infinite; }
+  @keyframes fd { 0% { transform: translateY(-20px); opacity: 0; } 15% { opacity: 1; } 70%, 100% { transform: translateY(78px); opacity: 1; } }
   footer { position: relative; z-index: 1; text-align: center; margin-top: 40px; font-size: 13px; letter-spacing: 3px; color: #a99ad8; }
 
   @keyframes blink { 50% { opacity: .35; } }
@@ -198,6 +202,14 @@
         <h2>Tic Tac Toe</h2>
         <p>Kreuz gegen Kreis – gegen die KI oder zu zweit, auch auf größeren Feldern.</p>
         <span class="play">SPIELEN</span> <span class="rec" data-href="/rekorde/#ttt">REKORDE</span>
+      </div>
+    </a>
+    <a class="game" href="/fruit/">
+      <div class="screen fruitprev"><span class="box"></span><i style="--s:22px;--c:var(--pink);left:44%;animation-delay:0s"></i><i style="--s:34px;--c:var(--cyan);left:30%;bottom:22px;animation:none"></i><i style="--s:46px;--c:var(--violet);left:54%;bottom:22px;animation:none"></i></div>
+      <div class="info">
+        <h2>Fruit Drop</h2>
+        <p>Früchte fallen lassen – zwei gleiche verschmelzen zur nächstgrößeren.</p>
+        <span class="play">SPIELEN</span> <span class="rec" data-href="/rekorde/#fruit">REKORDE</span>
       </div>
     </a>
     <div class="game soon">
