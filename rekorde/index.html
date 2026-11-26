@@ -55,8 +55,6 @@
   .note { color: var(--muted); font-size: 13px; margin: 8px 0 0; line-height: 1.5; }
   .stars { color: var(--gold); letter-spacing: 2px; }
   .stars i { color: rgba(255,255,255,.18); font-style: normal; }
-  .reset { display: block; margin: 30px auto 0; background: transparent; color: var(--muted); border: 1px solid rgba(169,154,216,.4);
-    border-radius: 10px; padding: 8px 14px; font-family: inherit; font-size: 14px; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -72,7 +70,6 @@
     <p class="note">Die Liste wird etwa jede Minute aktualisiert.</p>
   </section>
   <div id="list"></div>
-  <button class="reset" id="reset" type="button">Alle Rekorde löschen</button>
 </div>
 <script src="/snake/levels.js"></script>
 <script>
@@ -206,15 +203,6 @@
   // Neuer Spielstand aus der Cloud: Seite einmal neu aufbauen
   addEventListener('arcadia:save', () => location.reload());
   if (location.hash) { const t = document.querySelector(location.hash); if (t) { t.scrollIntoView(); t.style.borderColor = 'var(--cyan)'; t.style.boxShadow = '0 0 30px rgba(41,240,255,.4)'; } }
-  document.getElementById('reset').onclick = () => {
-    if (!confirm('Wirklich alle Rekorde aller Spiele löschen? Einstellungen bleiben erhalten.')) return;
-    const del = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (/^(snake\.(best|fair|rec)\.|snake\.park$|(flug|dino|block|fruit|stack|up)\.(best\.|rec$)|(vier|ttt|sol)\.(rec|streak|stats)$)/.test(k)) del.push(k);
-    }
-    del.forEach((k) => localStorage.removeItem(k)); location.reload();
-  };
 })();
 </script>
 </body>
