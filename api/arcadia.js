@@ -6,9 +6,8 @@ const URL_ = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
 const TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
 
 // Bestenlisten: Name → { low: kleiner ist besser, max: höchster glaubwürdiger Wert }
-const SNAKE_MODES = ['classic', 'wrap', 'walls', 'portal', 'poison', 'turbo', 'time', 'mirror', 'dark', 'flee', 'hunger', 'zone', 'chaos'];
 const BOARDS = {
-  'snake-park': { max: 48 },
+  snake: { max: 5000 },
   flug: { max: 5000 },
   dino: { max: 500000 },
   block: { max: 50000000 },
@@ -21,7 +20,6 @@ const BOARDS = {
 };
 // Bestenlisten der Version 2: nur noch Rekorde aus dem Rekord-Modus (die alten Listen bleiben unbenutzt liegen)
 const LB = 'lb2:';
-for (const m of SNAKE_MODES) BOARDS['snake-' + m] = { max: 5000 };
 
 const BAD = ['arsch', 'fick', 'fuck', 'hure', 'nazi', 'hitler', 'nigg', 'neger', 'schwuchtel', 'fotze', 'wichs', 'bitch', 'cunt', 'dick', 'penis', 'vagina', 'sex', 'porn', 'kanake', 'spast', 'missgeburt', 'shit', 'scheiss', 'scheiß', 'hurensohn', 'whore', 'slut', 'faggot', 'retard', 'kkk', 'heil'];
 

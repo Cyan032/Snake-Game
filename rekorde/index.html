@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0d0520">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Rekorde – Arcadia</title>
-<script src="/arcadia.js?v=9"></script>
+<script src="/arcadia.js?v=10"></script>
 <link rel="icon" type="image/png" sizes="64x64" href="/icons/favicon-64.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
 <link rel="manifest" href="/manifest.webmanifest">
@@ -88,13 +88,9 @@
 
   // ---------- Snake ----------
   {
-    const MODES = [['classic', 'Klassisch'], ['wrap', 'Ohne Wände'], ['walls', 'Hindernisse'], ['portal', 'Portale'], ['poison', 'Gift'], ['turbo', 'Turbo'],
-      ['time', 'Zeitrennen'], ['mirror', 'Spiegel'], ['dark', 'Dunkel'], ['flee', 'Fluchtäpfel'], ['hunger', 'Hunger'], ['zone', 'Zone'], ['chaos', 'Chaos']];
-    const rows = MODES.map(([id, name]) => ({ id, name, v: get('snake.rec.' + id, 0) }));
-    const top = rows.slice().sort((a, b) => b.v - a.v)[0];
-    let h = `<div class="big">${tile('Klassisch', rows[0].v || '–', 'Hauptrekord')}${tile('Bester Modus', top.v || '–', top.v ? top.name : '')}</div>`;
-    h += `<table>${rows.map((r) => `<tr><td>${r.name}</td><td>${r.v || '<span class="n">–</span>'}</td></tr>`).join('')}</table>`;
-    // Parkour: die Level sind immer gleich, deshalb zählt hier alles
+    const val = get('snake.rec.rekord', 0);
+    let h = `<div class="big">${tile('Rekord', val || '–', 'Spielmodus „Rekord“')}</div>`;
+    // Parkour-Fortschritt (kein Rekord, nur Fortschritt)
     const LV = window.SNAKE_LEVELS || [], park = get('snake.park', {}), TIERS = ['Leicht', 'Mittel', 'Schwer', 'Profi'];
     const starsOf = (lv) => lv.map.join('').split('*').length - 1 + (lv.stars || []).length;
     const total = LV.reduce((a, lv) => a + starsOf(lv), 0), got = LV.reduce((a, lv) => a + ((park[lv.id] || {}).s || 0), 0);
@@ -104,7 +100,7 @@
       const r = park[lv.id], n = starsOf(lv);
       return `<tr><td>${esc(lv.name)} <span class="n">${TIERS[lv.tier] || ''}</span> <span class="stars">${'★'.repeat(r.s)}<i>${'★'.repeat(Math.max(0, n - r.s))}</i></span></td><td>${fmtMs(r.t)}</td></tr>`;
     }).join('')}</table></details>`;
-    h += `<p class="note">Rekord-Modus: Feld Mittel, Tempo Normal, 1 Apfel, Karte Offen. Friedlich, 2 Spieler und Gegen KI haben keine Rekorde. Im Parkour zählt jedes Level, weil die Level immer gleich sind.</p>`;
+    h += `<p class="note">Rekorde zählen nur im Spielmodus „Rekord“: Feld Mittel, Tempo Normal, 1 Apfel, Karte Offen, mit jedem Apfel etwas schneller. Darunter steht dein Parkour-Fortschritt.</p>`;
     card('Snake', '/snake/', h);
   }
 
@@ -182,11 +178,12 @@
   konto();
 
   // ---------- Weltweite Bestenliste ----------
-  const WB = [['snake-classic', 'Snake Klassisch', ''], ['snake-park', 'Snake Parkour', ' ★'], ['flug', 'Flappy Bird', ' Pkt.'], ['dino', 'Dino Runner', ' m'],
+  const WB = [['snake', 'Snake', ' Pkt.'], ['flug', 'Flappy Bird', ' Pkt.'], ['dino', 'Dino Runner', ' m'],
     ['block', 'Blockfall', ' Pkt.'], ['fruit', 'Fruit Drop', ' Pkt.'], ['stack', 'Stack', ' Blöcke'], ['up', 'Only Up', ' m'], ['vier', 'Vier in Reihe', ' in Folge'],
     ['ttt', 'Tic Tac Toe', ' in Folge'], ['sol', 'Solitaire', 't']];
-  let wdata = null, wsel = 'snake-classic';
+  let wdata = null, wsel = 'snake';
   try { wsel = sessionStorage.getItem('rek.welt') || wsel; } catch (e) {}
+  if (!WB.some((w) => w[0] === wsel)) wsel = 'snake';
   function wrender() {
     document.getElementById('wseg').innerHTML = WB.map(([b, n]) => `<button data-b="${b}" class="${b === wsel ? 'on' : ''}">${n}</button>`).join('');
     document.querySelectorAll('#wseg button').forEach((x) => (x.onclick = () => { wsel = x.dataset.b; try { sessionStorage.setItem('rek.welt', wsel); } catch (e) {} wrender(); }));

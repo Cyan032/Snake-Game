@@ -34,6 +34,7 @@
 
   /* ---------- Spielregeln & Einstellungen ---------- */
   const MODES = [
+    { id: 'rekord',   icon: '🏆', name: 'Rekord',      desc: 'Feste Regeln für alle: Feld Mittel, Tempo Normal, 1 Apfel, mit jedem Apfel etwas schneller. Nur hier zählen Rekorde.', rekord: true },
     { id: 'classic',  icon: '🍎', name: 'Klassisch',   desc: 'Das Original: Wand oder eigener Schwanz – dann ist Schluss.' },
     { id: 'wrap',     icon: '♾️', name: 'Ohne Wände',  desc: 'Fahr durch den Rand und komm auf der anderen Seite wieder raus.', wrap: true },
     { id: 'walls',    icon: '🧱', name: 'Hindernisse', desc: 'Jeder Apfel lässt irgendwo einen Stein wachsen.', stones: true },
@@ -134,21 +135,22 @@
 
   const DEFAULTS = {
     mode: 'classic', speed: 'normal', size: 'm', apples: 1, bonus: 'on', theme: 'meadow', map: 'open', ai: 'normal',
-    color: 'blue', pattern: 'plain', keydebug: false, recmode: true, tier: 0, level: 0, tab: 'modes',
+    color: 'blue', pattern: 'plain', keydebug: false, tier: 0, level: 0, tab: 'modes',
   };
   const settings = Object.assign({}, DEFAULTS, store.get('settings', {}));
   const VALID = {
     mode: MODES.map((m) => m.id), speed: Object.keys(SPEEDS), size: Object.keys(SIZES), apples: APPLE_COUNTS, bonus: ['on', 'off'],
     theme: Object.keys(THEMES), map: Object.keys(MAPS), ai: Object.keys(AI_LEVELS), color: Object.keys(COLORS),
-    pattern: ['plain', 'stripes', 'dots', 'rainbow'], keydebug: [true, false], recmode: [true, false], tier: [0, 1, 2, 3], tab: ['modes', 'parkour', 'settings'],
+    pattern: ['plain', 'stripes', 'dots', 'rainbow'], keydebug: [true, false], tier: [0, 1, 2, 3], tab: ['modes', 'parkour', 'settings'],
   };
   for (const k in VALID) if (!VALID[k].includes(settings[k])) settings[k] = DEFAULTS[k];
   if (!(settings.level >= 0 && settings.level < LEVELS.length)) settings.level = 0;
   const saveSettings = () => store.set('settings', settings);
-  // Rekord-Modus: feste Standard-Einstellungen, nur dann zählen Rekorde
+  // Spielmodus „Rekord“: feste Standard-Einstellungen, nur dort zählen Rekorde
   const REC_SET = { speed: 'normal', size: 'm', apples: 1, bonus: 'on', map: 'open' };
-  const eff = (k) => (settings.recmode ? REC_SET[k] : settings[k]);
-  const recKey = (m) => (settings.recmode && !m.versus && !m.peaceful ? 'rec.' + m.id : null);
+  const curMode = () => MODES.find((m) => m.id === settings.mode) || MODES[0];
+  const eff = (k) => (curMode().rekord ? REC_SET[k] : settings[k]);
+  const recKey = (m) => (m.rekord ? 'rec.rekord' : null);
 
   /* ---------- Sound (Web Audio, ohne Dateien) ---------- */
   const Sound = {
@@ -828,6 +830,7 @@
     const total = scoreOf();
     if (recKey(m) && total > g.best) { g.best = total; store.set(recKey(m), g.best); }
     if (m.turbo) { g.turbo = Math.pow(0.97, total); retime(); }
+    if (m.rekord) { g.turbo = Math.max(0.6, Math.pow(0.985, total)); retime(); }
     if (!gold && !apple.extra && !spawn('apples')) g.full = true;
     if (!gold && eff('bonus') === 'on' && !g.apples.some((a) => a.kind === 'gold') && Math.random() < 0.16) spawnGold();
     if (m.stones && !gold && spawn('stones', 4)) {
@@ -2238,13 +2241,13 @@
     el.modes.querySelectorAll('.mode').forEach((b) => {
       const m = MODES.find((x) => x.id === b.dataset.mode);
       b.classList.toggle('on', m.id === settings.mode);
-      b.querySelector('.mb').textContent = m.duo ? 'Tastatur' : m.ai ? 'vs. Computer' : (recKey(m) ? 'Rekord ' + store.get(recKey(m), 0) : m.peaceful ? 'ohne Rekord' : 'Frei');
+      b.querySelector('.mb').textContent = m.duo ? 'Tastatur' : m.ai ? 'vs. Computer' : (recKey(m) ? 'Rekord ' + store.get(recKey(m), 0) : '');
     });
     const mode = MODES.find((m) => m.id === settings.mode);
     el.modeDesc.textContent = mode.desc;
     const th = THEMES[settings.theme], mp = MAPS[settings.map];
-    el.summary.innerHTML = settings.recmode ? `Welt <b>${th.name}</b> · Rekord-Modus: Karte Offen · Feld Mittel · Tempo Normal · 1 Apfel` : `Welt <b>${th.name}</b> · Karte <b>${mp.name}</b> · Feld <b>${SIZE_NAMES[settings.size]}</b> · Tempo <b>${SPEED_NAMES[settings.speed]}</b> · ändern`;
-    document.querySelectorAll('.rec-lock').forEach((x) => x.classList.toggle('locked', !!settings.recmode));
+    el.summary.innerHTML = curMode().rekord ? `Welt <b>${th.name}</b> · feste Regeln: Karte Offen · Feld Mittel · Tempo Normal · 1 Apfel` : `Welt <b>${th.name}</b> · Karte <b>${mp.name}</b> · Feld <b>${SIZE_NAMES[settings.size]}</b> · Tempo <b>${SPEED_NAMES[settings.speed]}</b> · ändern`;
+    document.querySelectorAll('.rec-lock').forEach((x) => x.classList.toggle('locked', !!curMode().rekord));
     document.querySelectorAll('.seg[data-setting]').forEach((seg) => {
       seg.querySelectorAll('button').forEach((b) => b.classList.toggle('on', String(settings[seg.dataset.setting]) === b.dataset.v));
     });
@@ -2423,7 +2426,7 @@
     const b = e.target.closest('button');
     if (!b) return;
     const k = seg.dataset.setting;
-    settings[k] = k === 'apples' ? Number(b.dataset.v) : k === 'keydebug' || k === 'recmode' ? b.dataset.v === 'true' : b.dataset.v;
+    settings[k] = k === 'apples' ? Number(b.dataset.v) : k === 'keydebug' ? b.dataset.v === 'true' : b.dataset.v;
     saveSettings();
     syncMenu();
   }));

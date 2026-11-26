@@ -10,15 +10,9 @@
     ['time', 'Zeitrennen'], ['mirror', 'Spiegel'], ['dark', 'Dunkel'], ['flee', 'Fluchtäpfel'], ['hunger', 'Hunger'], ['zone', 'Zone'], ['chaos', 'Chaos']];
 
   // Rekorde entstehen nur im Rekord-Modus der Spiele (feste Einstellungen) und liegen unter '<spiel>.rec'
-  function parkStars() {
-    const park = get('snake.park', {}); let s = 0;
-    for (const k in park) s += (park[k] && park[k].s) || 0;
-    return s;
-  }
   function localBest() {
     const out = {};
-    for (const [id] of SNAKE_MODES) { const v = get('snake.rec.' + id, 0); if (v > 0) out['snake-' + id] = v; }
-    const ps = parkStars(); if (ps) out['snake-park'] = ps;
+    const sn = +get('snake.rec.rekord', 0); if (sn > 0) out.snake = sn; // nur der Snake-Spielmodus „Rekord“
     for (const g of ['flug', 'dino', 'block', 'fruit', 'stack', 'up', 'vier', 'ttt']) { const v = +get(g + '.rec', 0); if (v > 0) out[g] = v; }
     const sol = +get('sol.rec', 0); if (sol > 0) out.sol = Math.round(sol * 10) / 10;
     return out;
