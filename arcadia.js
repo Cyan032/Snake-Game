@@ -374,9 +374,12 @@
     if (document.getElementById('arc-ws')) return;
     if (!document.getElementById('arc-ws-css')) {
       const st = document.createElement('style'); st.id = 'arc-ws-css';
-      st.textContent = `#arc-ws { position: fixed; inset: 0; z-index: 99999; display: grid; place-items: center; padding: 16px; overflow: auto; background: rgba(0,0,0,.7); font-family: 'Fredoka', system-ui, sans-serif; color: #e8ffe8; }
-        #arc-ws .box { width: min(440px, 100%); background: #08140a; border: 2px solid #3ddc84; border-radius: 18px; padding: 20px; box-shadow: 0 0 30px rgba(61,220,132,.35); font-size: 15px; }
-        #arc-ws h2 { margin: 0 0 2px; font-family: ui-monospace, Menlo, monospace; color: #3ddc84; letter-spacing: 2px; }
+      st.textContent = `#arc-ws { position: fixed; inset: 0; z-index: 99999; display: grid; place-items: center; padding: 16px; overflow: auto; background: #000; font-family: 'Fredoka', system-ui, sans-serif; color: #e8ffe8; }
+        #arc-ws canvas.net { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; }
+        #arc-ws .box { position: relative; z-index: 1; backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); width: min(440px, 100%); background: rgba(2,14,6,.82); border: 2px solid #3ddc84; border-radius: 18px; padding: 20px; box-shadow: 0 0 30px rgba(61,220,132,.35); font-size: 15px; }
+        #arc-ws h2 { margin: 0 0 6px; font-family: ui-monospace, Menlo, monospace; color: #3ddc84; letter-spacing: 3px; text-shadow: 0 0 10px #3ddc84, 0 0 24px rgba(61,220,132,.5); }
+        #arc-ws h2 .cur { animation: wsblink 1s steps(1) infinite; }
+        #arc-ws .ln { font: 12px ui-monospace, Menlo, monospace; color: #2fa866; margin: 0 0 4px; opacity: .85; }
         #arc-ws p { margin: 6px 0; color: #9fd8b0; line-height: 1.45; } #arc-ws label { display: block; margin: 12px 0 5px; font-weight: 600; }
         #arc-ws input[type=text] { width: 100%; box-sizing: border-box; padding: 11px 12px; border-radius: 10px; border: 2px solid #2a6b44; background: #020803; color: #e8ffe8; font: 500 16px ui-monospace, Menlo, monospace; outline: none; }
         #arc-ws input[type=text]:focus { border-color: #3ddc84; }
@@ -393,7 +396,7 @@
     let recording = false;
     const MODES = { tab: 'Neuer Tab', same: 'Gleicher Tab', fast: 'Sofort weg (ohne Zurück)' };
     const opts = (name, list, cur) => `<div class="opts" data-o="${name}">${Object.entries(list).map(([k, v]) => `<button type="button" data-v="${k}" class="${k === cur ? 'on' : ''}">${v}</button>`).join('')}</div>`;
-    g.innerHTML = `<div class="box"><h2>&gt; WEBSWITCH_</h2><p>Du hast das Easter Egg gefunden. Mit deinem Kürzel oder deiner Geste springst du von jeder Arcadia-Seite sofort auf diese Adresse.</p>
+    g.innerHTML = `<div class="box"><h2>&gt; WEBSWITCH<span class="cur">_</span></h2><div class="ln" id="ws-ln"></div>
       <label>Adresse</label><input type="text" id="ws-url" placeholder="z. B. wikipedia.org" value="${esc(c.url)}" autocomplete="off" spellcheck="false">
       <div class="opts" id="ws-presets" style="margin-top:6px">${WS_URLS.map((u) => `<button type="button" data-u="${u}" class="${u === c.url ? 'on' : ''}">${u.replace(/^https:\/\//, '').replace(/\/$/, '')}</button>`).join('')}</div>
       <label>Öffnen</label>${opts('mode', MODES, c.mode)}
@@ -404,6 +407,38 @@
       <p style="font-size:13px">Dieses Menü öffnest du wieder mit Alt + Shift + W oder 5× auf „COIN“ unten auf der Startseite.</p>
       <div class="row"><button type="button" id="ws-close">Schließen</button><button type="button" class="go" id="ws-save">Speichern</button></div></div>`;
     document.body.appendChild(g);
+    // Netz aus schwebenden Punkten, die sich bei Nähe verbinden (wie ein Hacker-Bildschirm)
+    const cv = document.createElement('canvas'); cv.className = 'net'; g.prepend(cv);
+    const cx = cv.getContext('2d'), dpr = Math.min(devicePixelRatio || 1, 2);
+    let W = 0, H = 0, pts = [], raf = 0, mx = -999, my = -999;
+    const size = () => { W = innerWidth; H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const n = Math.round(Math.min(110, (W * H) / 11000)); while (pts.length < n) pts.push({ x: Math.random() * W, y: Math.random() * H, vx: (Math.random() - 0.5) * 0.5, vy: (Math.random() - 0.5) * 0.5 }); pts.length = n; };
+    size(); addEventListener('resize', size);
+    g.addEventListener('pointermove', (e) => { mx = e.clientX; my = e.clientY; });
+    const HEX = '0123456789ABCDEF';
+    const drops = Array.from({ length: 40 }, () => ({ x: Math.random(), y: Math.random(), s: 0.3 + Math.random() * 0.7 }));
+    function tick() {
+      cx.fillStyle = 'rgba(0,0,0,.35)'; cx.fillRect(0, 0, W, H);
+      // fallende Zeichen im Hintergrund
+      cx.font = '13px ui-monospace, Menlo, monospace';
+      for (const d of drops) { d.y += 0.004 * d.s; if (d.y > 1.05) { d.y = -0.05; d.x = Math.random(); } cx.fillStyle = `rgba(61,220,132,${0.15 + d.s * 0.25})`; cx.fillText(HEX[(Math.random() * 16) | 0], d.x * W, d.y * H); }
+      for (const p of pts) {
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0 || p.x > W) p.vx *= -1; if (p.y < 0 || p.y > H) p.vy *= -1;
+        const dm = Math.hypot(p.x - mx, p.y - my); if (dm < 140) { p.x += (p.x - mx) / dm; p.y += (p.y - my) / dm; } // weichen der Maus aus
+      }
+      for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) {
+        const a = pts[i], b = pts[j], d = Math.hypot(a.x - b.x, a.y - b.y);
+        if (d < 150) { cx.strokeStyle = `rgba(61,220,132,${(1 - d / 150) * 0.55})`; cx.lineWidth = 1; cx.beginPath(); cx.moveTo(a.x, a.y); cx.lineTo(b.x, b.y); cx.stroke(); }
+      }
+      for (const p of pts) { cx.fillStyle = '#3ddc84'; cx.shadowColor = '#3ddc84'; cx.shadowBlur = 8; cx.beginPath(); cx.arc(p.x, p.y, 2, 0, 7); cx.fill(); }
+      cx.shadowBlur = 0;
+      if (document.body.contains(g)) raf = requestAnimationFrame(tick); else removeEventListener('resize', size);
+    }
+    tick();
+    // kleine „Terminal“-Zeile, die sich tippt
+    const ln = g.querySelector('#ws-ln'), msg = '[ok] verbindung sicher · ' + (A.code ? 'user: ' + A.name : 'gast') + ' · bereit';
+    let li = 0; const typer = setInterval(() => { if (!document.body.contains(g)) return clearInterval(typer); ln.textContent = msg.slice(0, ++li); if (li >= msg.length) clearInterval(typer); }, 28);
     const recBox = g.querySelector('#ws-rec');
     function startRec() { recording = true; recBox.classList.add('wait'); recBox.textContent = 'Jetzt Taste oder Kombination drücken …'; }
     g.addEventListener('keydown', (e) => {
