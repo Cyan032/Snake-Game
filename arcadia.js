@@ -318,6 +318,8 @@
     shake: 'Gerät schütteln',
     none: 'Keine',
   };
+  // Vorgaben für die Adresse
+  const WS_URLS = ['https://online-schule.saarland/', 'https://meine.online-schule.saarland/', 'https://lms-wgr-sb.online-schule.saarland/my/'];
   const wsCfg = () => Object.assign({ url: '', mode: 'tab', key: 'altq', custom: null, gesture: 'three', on: true }, get('arcadia.webswitch', {}));
   const KEYLABEL = { Space: 'Leertaste', Escape: 'Esc', Backquote: '^', Enter: 'Enter', Backspace: '⌫', Tab: 'Tab', ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→' };
   function comboName(c) {
@@ -393,6 +395,7 @@
     const opts = (name, list, cur) => `<div class="opts" data-o="${name}">${Object.entries(list).map(([k, v]) => `<button type="button" data-v="${k}" class="${k === cur ? 'on' : ''}">${v}</button>`).join('')}</div>`;
     g.innerHTML = `<div class="box"><h2>&gt; WEBSWITCH_</h2><p>Du hast das Easter Egg gefunden. Mit deinem Kürzel oder deiner Geste springst du von jeder Arcadia-Seite sofort auf diese Adresse.</p>
       <label>Adresse</label><input type="text" id="ws-url" placeholder="z. B. wikipedia.org" value="${esc(c.url)}" autocomplete="off" spellcheck="false">
+      <div class="opts" id="ws-presets" style="margin-top:6px">${WS_URLS.map((u) => `<button type="button" data-u="${u}" class="${u === c.url ? 'on' : ''}">${u.replace(/^https:\/\//, '').replace(/\/$/, '')}</button>`).join('')}</div>
       <label>Öffnen</label>${opts('mode', MODES, c.mode)}
       <label>Tastenkürzel</label>${opts('key', Object.fromEntries(Object.entries(WS_KEYS).map(([k, v]) => [k, v.name])), c.key)}
       <div class="rec" id="ws-rec" style="display:${c.key === 'custom' ? 'block' : 'none'}">${c.custom ? comboName(c.custom) + ' · tippen zum Ändern' : 'Hier tippen und dann Taste drücken'}</div>
@@ -415,6 +418,10 @@
       if (e.key === 'Escape') g.remove();
     }, true);
     recBox.onclick = startRec;
+    const urlIn = g.querySelector('#ws-url'), presets = g.querySelector('#ws-presets');
+    const markPreset = () => presets.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x.dataset.u === urlIn.value.trim()));
+    presets.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; urlIn.value = b.dataset.u; markPreset(); });
+    urlIn.addEventListener('input', markPreset);
     g.querySelectorAll('.opts').forEach((o) => o.addEventListener('click', (e) => {
       const b = e.target.closest('button'); if (!b) return;
       state[o.dataset.o] = b.dataset.v; o.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b));
