@@ -2,7 +2,7 @@
    Seiten (HTML): erst Netz, bei Offline aus dem Speicher → Updates kommen sofort an.
    Dateien (JS, CSS, Bilder, Schriften): sofort aus dem Speicher, im Hintergrund aktualisiert.
    Die Online-Bestenliste (/api) wird nie gespeichert. */
-const CACHE = 'arcadia-v8';
+const CACHE = 'arcadia-v10';
 const PAGES = ['/', '/snake/', '/flug/', '/dino/', '/block/', '/solitaire/', '/vier/', '/ttt/', '/fruit/', '/stack/', '/up/', '/rekorde/'];
 const FILES = ['/arcadia.js', '/scene.js', '/vendor/three.min.js', '/snake/game.js', '/snake/levels.js', '/snake/style.css',
   '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/apple-touch-icon.png', '/icons/favicon-64.png'];

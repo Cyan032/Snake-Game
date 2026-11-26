@@ -370,108 +370,209 @@
   });
   function askMotion() { try { if (window.DeviceMotionEvent && DeviceMotionEvent.requestPermission) DeviceMotionEvent.requestPermission().catch(() => {}); } catch (e) {} }
 
+  // Menü als Netz (wie eine Graph-Ansicht): Mitte = Webswitch, Striche zu den Bereichen, daran die Auswahl
   A.webswitch = function () {
     if (document.getElementById('arc-ws')) return;
     if (!document.getElementById('arc-ws-css')) {
       const st = document.createElement('style'); st.id = 'arc-ws-css';
-      st.textContent = `#arc-ws { position: fixed; inset: 0; z-index: 99999; display: grid; place-items: center; padding: 16px; overflow: auto; background: #000; font-family: 'Fredoka', system-ui, sans-serif; color: #e8ffe8; }
-        #arc-ws canvas.net { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; }
-        #arc-ws .box { position: relative; z-index: 1; backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); width: min(440px, 100%); background: rgba(2,14,6,.82); border: 2px solid #3ddc84; border-radius: 18px; padding: 20px; box-shadow: 0 0 30px rgba(61,220,132,.35); font-size: 15px; }
-        #arc-ws h2 { margin: 0 0 6px; font-family: ui-monospace, Menlo, monospace; color: #3ddc84; letter-spacing: 3px; text-shadow: 0 0 10px #3ddc84, 0 0 24px rgba(61,220,132,.5); }
-        #arc-ws h2 .cur { animation: wsblink 1s steps(1) infinite; }
-        #arc-ws .ln { font: 12px ui-monospace, Menlo, monospace; color: #2fa866; margin: 0 0 4px; opacity: .85; }
-        #arc-ws p { margin: 6px 0; color: #9fd8b0; line-height: 1.45; } #arc-ws label { display: block; margin: 12px 0 5px; font-weight: 600; }
-        #arc-ws input[type=text] { width: 100%; box-sizing: border-box; padding: 11px 12px; border-radius: 10px; border: 2px solid #2a6b44; background: #020803; color: #e8ffe8; font: 500 16px ui-monospace, Menlo, monospace; outline: none; }
-        #arc-ws input[type=text]:focus { border-color: #3ddc84; }
-        #arc-ws .opts { display: flex; flex-wrap: wrap; gap: 6px; } #arc-ws .opts button { flex: 1 1 auto; padding: 8px 10px; border-radius: 10px; border: 2px solid #2a6b44; background: transparent; color: #9fd8b0; font-weight: 600; font-size: 14px; font-family: inherit; cursor: pointer; }
-        #arc-ws .opts button.on { background: #3ddc84; border-color: #3ddc84; color: #04140a; }
-        #arc-ws .rec { margin-top: 8px; padding: 12px; border-radius: 12px; border: 2px dashed #3ddc84; text-align: center; font: 600 16px ui-monospace, Menlo, monospace; color: #3ddc84; cursor: pointer; }
-        #arc-ws .rec.wait { animation: wsblink 1s steps(1) infinite; } @keyframes wsblink { 50% { opacity: .4; } }
-        #arc-ws .row { display: flex; gap: 8px; margin-top: 16px; } #arc-ws .row button { flex: 1; padding: 11px; border-radius: 12px; border: 0; font-weight: 700; font-size: 15px; font-family: inherit; cursor: pointer; background: #1c3a26; color: #e8ffe8; }
-        #arc-ws .row button.go { background: #3ddc84; color: #04140a; }`;
+      st.textContent = `#arc-ws { position: fixed; inset: 0; z-index: 99999; background: #0b0d0c; font-family: ui-monospace, Menlo, Consolas, monospace; color: #cfe9d6; touch-action: none; user-select: none; -webkit-user-select: none; }
+        #arc-ws canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+        #arc-ws .top { position: absolute; left: 16px; top: 14px; font-size: 13px; color: #5fae7c; letter-spacing: 1px; pointer-events: none; }
+        #arc-ws .top b { color: #3ddc84; font-size: 17px; letter-spacing: 3px; text-shadow: 0 0 10px rgba(61,220,132,.6); }
+        #arc-ws .x { position: absolute; right: 14px; top: 12px; width: 40px; height: 40px; border-radius: 50%; border: 1px solid #2c4f39; background: rgba(11,13,12,.8); color: #9fd8b0; font-size: 20px; cursor: pointer; }
+        #arc-ws .x:hover { border-color: #3ddc84; color: #3ddc84; }
+        #arc-ws .hint { position: absolute; left: 0; right: 0; bottom: 14px; text-align: center; font-size: 12px; color: #4d7a5d; pointer-events: none; }
+        #arc-ws .inp { position: absolute; transform: translate(-50%, 0); display: flex; gap: 6px; }
+        #arc-ws .inp input { width: min(320px, 70vw); padding: 9px 11px; border-radius: 9px; border: 1px solid #3ddc84; background: #050706; color: #e8ffe8; font: 15px ui-monospace, Menlo, monospace; outline: none; box-shadow: 0 0 18px rgba(61,220,132,.3); }
+        #arc-ws .inp button { padding: 0 12px; border-radius: 9px; border: 0; background: #3ddc84; color: #04140a; font: 700 14px ui-monospace, Menlo, monospace; cursor: pointer; }`;
       document.head.appendChild(st);
     }
-    const c = wsCfg(), g = document.createElement('div'); g.id = 'arc-ws';
-    const state = { mode: c.mode, key: c.key, custom: c.custom, gesture: c.gesture, on: c.on ? '1' : '0' };
+    const c = wsCfg();
+    const state = { url: c.url, mode: c.mode, key: c.key, custom: c.custom, gesture: c.gesture, on: c.on ? '1' : '0' };
+    const short = (u) => u.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    const URL_LBL = { 'https://online-schule.saarland/': 'online-schule', 'https://meine.online-schule.saarland/': 'meine.online-schule', 'https://lms-wgr-sb.online-schule.saarland/my/': 'lms-wgr-sb' };
+    const GEST_LBL = { three: '3 Finger', twodbl: '2 Finger 2×', corner: 'Ecke 3×', shake: 'schütteln', none: 'keine' };
+    const KEY_LBL = { altq: 'Alt+Q', shiftesc: 'Shift+Esc', backquote: '^ Taste', none: 'keins' };
     let recording = false;
-    const MODES = { tab: 'Neuer Tab', same: 'Gleicher Tab', fast: 'Sofort weg (ohne Zurück)' };
-    const opts = (name, list, cur) => `<div class="opts" data-o="${name}">${Object.entries(list).map(([k, v]) => `<button type="button" data-v="${k}" class="${k === cur ? 'on' : ''}">${v}</button>`).join('')}</div>`;
-    g.innerHTML = `<div class="box"><h2>&gt; WEBSWITCH<span class="cur">_</span></h2><div class="ln" id="ws-ln"></div>
-      <label>Adresse</label><input type="text" id="ws-url" placeholder="z. B. wikipedia.org" value="${esc(c.url)}" autocomplete="off" spellcheck="false">
-      <div class="opts" id="ws-presets" style="margin-top:6px">${WS_URLS.map((u) => `<button type="button" data-u="${u}" class="${u === c.url ? 'on' : ''}">${u.replace(/^https:\/\//, '').replace(/\/$/, '')}</button>`).join('')}</div>
-      <label>Öffnen</label>${opts('mode', MODES, c.mode)}
-      <label>Tastenkürzel</label>${opts('key', Object.fromEntries(Object.entries(WS_KEYS).map(([k, v]) => [k, v.name])), c.key)}
-      <div class="rec" id="ws-rec" style="display:${c.key === 'custom' ? 'block' : 'none'}">${c.custom ? comboName(c.custom) + ' · tippen zum Ändern' : 'Hier tippen und dann Taste drücken'}</div>
-      <label>Geste (iPad und Handy)</label>${opts('gesture', WS_GESTURES, c.gesture)}
-      <label>Webswitch</label>${opts('on', { 1: 'An', 0: 'Aus' }, c.on ? '1' : '0')}
-      <p style="font-size:13px">Dieses Menü öffnest du wieder mit Alt + Shift + W oder 5× auf „COIN“ unten auf der Startseite.</p>
-      <div class="row"><button type="button" id="ws-close">Schließen</button><button type="button" class="go" id="ws-save">Speichern</button></div></div>`;
+    const save = (msg) => {
+      const key = state.key === 'custom' && !state.custom ? 'none' : state.key;
+      put('arcadia.webswitch', { url: state.url, mode: state.mode, key, custom: state.custom, gesture: state.gesture, on: state.on === '1' });
+      if (msg) flash = { text: msg, t: 1.6 };
+    };
+
+    const g = document.createElement('div'); g.id = 'arc-ws';
+    g.innerHTML = `<canvas></canvas><div class="top"><b>&gt; WEBSWITCH</b><br><span id="ws-ln"></span></div><button class="x" type="button" title="Schließen (Esc)">✕</button>
+      <div class="hint">Knoten antippen zum Auswählen · ziehen zum Verschieben · wird sofort gespeichert</div>`;
     document.body.appendChild(g);
-    // Netz aus schwebenden Punkten, die sich bei Nähe verbinden (wie ein Hacker-Bildschirm)
-    const cv = document.createElement('canvas'); cv.className = 'net'; g.prepend(cv);
-    const cx = cv.getContext('2d'), dpr = Math.min(devicePixelRatio || 1, 2);
-    let W = 0, H = 0, pts = [], raf = 0, mx = -999, my = -999;
-    const size = () => { W = innerWidth; H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; cx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const n = Math.round(Math.min(110, (W * H) / 11000)); while (pts.length < n) pts.push({ x: Math.random() * W, y: Math.random() * H, vx: (Math.random() - 0.5) * 0.5, vy: (Math.random() - 0.5) * 0.5 }); pts.length = n; };
-    size(); addEventListener('resize', size);
-    g.addEventListener('pointermove', (e) => { mx = e.clientX; my = e.clientY; });
-    const HEX = '0123456789ABCDEF';
-    const drops = Array.from({ length: 40 }, () => ({ x: Math.random(), y: Math.random(), s: 0.3 + Math.random() * 0.7 }));
-    function tick() {
-      cx.fillStyle = 'rgba(0,0,0,.35)'; cx.fillRect(0, 0, W, H);
-      // fallende Zeichen im Hintergrund
-      cx.font = '13px ui-monospace, Menlo, monospace';
-      for (const d of drops) { d.y += 0.004 * d.s; if (d.y > 1.05) { d.y = -0.05; d.x = Math.random(); } cx.fillStyle = `rgba(61,220,132,${0.15 + d.s * 0.25})`; cx.fillText(HEX[(Math.random() * 16) | 0], d.x * W, d.y * H); }
-      for (const p of pts) {
-        p.x += p.vx; p.y += p.vy;
-        if (p.x < 0 || p.x > W) p.vx *= -1; if (p.y < 0 || p.y > H) p.vy *= -1;
-        const dm = Math.hypot(p.x - mx, p.y - my); if (dm < 140) { p.x += (p.x - mx) / dm; p.y += (p.y - my) / dm; } // weichen der Maus aus
-      }
-      for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) {
-        const a = pts[i], b = pts[j], d = Math.hypot(a.x - b.x, a.y - b.y);
-        if (d < 150) { cx.strokeStyle = `rgba(61,220,132,${(1 - d / 150) * 0.55})`; cx.lineWidth = 1; cx.beginPath(); cx.moveTo(a.x, a.y); cx.lineTo(b.x, b.y); cx.stroke(); }
-      }
-      for (const p of pts) { cx.fillStyle = '#3ddc84'; cx.shadowColor = '#3ddc84'; cx.shadowBlur = 8; cx.beginPath(); cx.arc(p.x, p.y, 2, 0, 7); cx.fill(); }
-      cx.shadowBlur = 0;
-      if (document.body.contains(g)) raf = requestAnimationFrame(tick); else removeEventListener('resize', size);
+    const cv = g.querySelector('canvas'), cx = cv.getContext('2d');
+    const close = () => { g.remove(); removeEventListener('resize', size); };
+    g.querySelector('.x').onclick = close;
+
+    // ---------- Knoten und Verbindungen ----------
+    const CATS = [
+      { id: 'url', label: 'Adresse', opts: () => [...WS_URLS.map((u) => ({ v: u, label: URL_LBL[u] || short(u) })), { v: '__custom', label: WS_URLS.includes(state.url) || !state.url ? 'eigene …' : short(state.url).slice(0, 22) }] },
+      { id: 'mode', label: 'Öffnen', opts: () => [{ v: 'tab', label: 'neuer Tab' }, { v: 'same', label: 'gleicher Tab' }, { v: 'fast', label: 'sofort weg' }] },
+      { id: 'key', label: 'Kürzel', opts: () => Object.keys(WS_KEYS).map((k) => ({ v: k, label: k === 'custom' ? (recording ? 'Taste drücken …' : state.custom ? comboName(state.custom) : 'eigenes …') : KEY_LBL[k] })) },
+      { id: 'gesture', label: 'Geste', opts: () => Object.keys(WS_GESTURES).map((k) => ({ v: k, label: GEST_LBL[k] })) },
+      { id: 'on', label: 'Status', opts: () => [{ v: '1', label: 'an' }, { v: '0', label: 'aus' }] },
+    ];
+    const isOn = (cat, v) => (cat === 'url' ? (v === '__custom' ? !!state.url && !WS_URLS.includes(state.url) : state.url === v) : String(state[cat]) === String(v));
+    let W = 0, H = 0, S = 1, SY = 1, dpr = 1;
+    const nodes = [], links = [];
+    const root = { kind: 'root', label: 'WEBSWITCH', x: 0, y: 0, vx: 0, vy: 0, r: 22 };
+    nodes.push(root);
+    CATS.forEach((cat, i) => {
+      const a = (i / CATS.length) * Math.PI * 2 - Math.PI / 2;
+      const cn = { kind: 'cat', cat: cat.id, label: cat.label, x: Math.cos(a) * 200, y: Math.sin(a) * 200, vx: 0, vy: 0, r: 12, a };
+      nodes.push(cn); links.push([root, cn, 210]);
+      cat.opts().forEach((o, j, arr) => {
+        const b = a + (j - (arr.length - 1) / 2) * 0.55;
+        const on = { kind: 'opt', cat: cat.id, v: o.v, x: cn.x + Math.cos(b) * 120, y: cn.y + Math.sin(b) * 120, vx: 0, vy: 0, r: 7, a };
+        nodes.push(on); links.push([cn, on, 120]);
+      });
+    });
+    const labelOf = (n) => {
+      if (n.kind !== 'opt') return n.label;
+      const o = CATS.find((c2) => c2.id === n.cat).opts().find((x) => x.v === n.v); return o ? o.label : '';
+    };
+
+    function size() {
+      dpr = Math.min(devicePixelRatio || 1, 2); W = innerWidth; H = innerHeight;
+      cv.width = W * dpr; cv.height = H * dpr; if (!S || S === 1) S = SY = Math.min(W, H) / 900;
     }
-    tick();
-    // kleine „Terminal“-Zeile, die sich tippt
-    const ln = g.querySelector('#ws-ln'), msg = '[ok] verbindung sicher · ' + (A.code ? 'user: ' + A.name : 'gast') + ' · bereit';
-    let li = 0; const typer = setInterval(() => { if (!document.body.contains(g)) return clearInterval(typer); ln.textContent = msg.slice(0, ++li); if (li >= msg.length) clearInterval(typer); }, 28);
-    const recBox = g.querySelector('#ws-rec');
-    function startRec() { recording = true; recBox.classList.add('wait'); recBox.textContent = 'Jetzt Taste oder Kombination drücken …'; }
+    size(); addEventListener('resize', size);
+    // Zoom so wählen, dass das ganze Netz samt Beschriftung auf den Bildschirm passt
+    function fit() {
+      let mx = 1, my = 1;
+      for (const n of nodes) { mx = Math.max(mx, Math.abs(n.x) + (n.kind === 'opt' ? 70 : 50)); my = Math.max(my, Math.abs(n.y) + 34); }
+      const sx = Math.max(0.4, Math.min(1.3, (W / 2 - 14) / mx)), sy = Math.max(0.4, Math.min(1.3, (H / 2 - 70) / my));
+      const tx = Math.min(sx, sy), ty = Math.min(sy, tx * 1.8); // im Hochformat die Höhe ausnutzen
+      S += (tx - S) * 0.08; SY += (ty - SY) * 0.08;
+    }
+
+    // ---------- Physik: abstoßen, Federn, leichte Anziehung zur Mitte ----------
+    let drag = null, hover = null, t = 0, flash = null;
+    function physics() {
+      for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) {
+        const a = nodes[i], b = nodes[j]; let dx = b.x - a.x, dy = b.y - a.y; const d2 = dx * dx + dy * dy + 0.01, d = Math.sqrt(d2);
+        const f = Math.min(5, 5200 / d2); dx /= d; dy /= d;
+        a.vx -= dx * f; a.vy -= dy * f; b.vx += dx * f; b.vy += dy * f;
+      }
+      for (const [a, b, len] of links) {
+        const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1, f = (d - len) * 0.012;
+        a.vx += (dx / d) * f; a.vy += (dy / d) * f; b.vx -= (dx / d) * f; b.vy -= (dy / d) * f;
+      }
+      for (const n of nodes) {
+        if (n === drag) { n.vx = n.vy = 0; continue; }
+        n.vx -= n.x * 0.0012; n.vy -= n.y * 0.0012;           // zur Mitte
+        if (n.kind === 'opt') { const d = Math.hypot(n.x, n.y) || 1; n.vx += (n.x / d) * 0.25; n.vy += (n.y / d) * 0.25; } // nach außen
+        n.vx += Math.sin(t * 0.6 + n.x * 0.01) * 0.02;          // leichtes Schweben
+        n.vy += Math.cos(t * 0.5 + n.y * 0.01) * 0.02;
+        n.vx *= 0.86; n.vy *= 0.86; n.x += n.vx; n.y += n.vy;
+      }
+      root.x *= 0.9; root.y *= 0.9; // Mitte bleibt in der Mitte
+    }
+    const toScreen = (n) => [W / 2 + n.x * S, H / 2 + n.y * SY];
+    const neighbors = (n) => new Set(links.filter(([a, b]) => a === n || b === n).flatMap(([a, b]) => [a, b]));
+
+    function draw() {
+      cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      cx.fillStyle = '#0b0d0c'; cx.fillRect(0, 0, W, H);
+      // feines Punktraster
+      cx.fillStyle = 'rgba(61,220,132,.07)';
+      for (let x = (W / 2) % 32; x < W; x += 32) for (let y = (H / 2) % 32; y < H; y += 32) cx.fillRect(x, y, 1.5, 1.5);
+      const hn = hover && hover.kind !== 'root' ? neighbors(hover) : null;
+      for (const [a, b] of links) {
+        const [x1, y1] = toScreen(a), [x2, y2] = toScreen(b);
+        const lit = hn && hn.has(a) && hn.has(b), sel = b.kind === 'opt' && isOn(b.cat, b.v);
+        cx.strokeStyle = lit ? 'rgba(61,220,132,.9)' : sel ? 'rgba(61,220,132,.55)' : hn ? 'rgba(120,140,128,.12)' : 'rgba(120,140,128,.35)';
+        cx.lineWidth = lit || sel ? 1.6 : 1; cx.beginPath(); cx.moveTo(x1, y1); cx.lineTo(x2, y2); cx.stroke();
+      }
+      cx.textAlign = 'center'; cx.textBaseline = 'top';
+      for (const n of nodes) {
+        const [x, y] = toScreen(n), dim = hn && !hn.has(n), sel = n.kind === 'opt' && isOn(n.cat, n.v);
+        const r = n.r * S * (n === hover ? 1.25 : 1);
+        if (n.kind === 'root') {
+          const pulse = 1 + Math.sin(t * 2.2) * 0.06;
+          cx.strokeStyle = 'rgba(61,220,132,.35)'; cx.lineWidth = 1;
+          cx.beginPath(); cx.arc(x, y, r * 1.9 * pulse, 0, 7); cx.stroke();
+          cx.beginPath(); cx.arc(x, y, r * 2.8 * (2 - pulse), 0, 7); cx.stroke();
+        }
+        cx.globalAlpha = dim ? 0.25 : 1;
+        cx.shadowColor = '#3ddc84'; cx.shadowBlur = sel || n.kind === 'root' || n === hover ? 16 : 0;
+        cx.fillStyle = n.kind === 'root' ? '#3ddc84' : sel ? '#3ddc84' : n.kind === 'cat' ? '#9fb8a8' : '#5b6b61';
+        cx.beginPath(); cx.arc(x, y, r, 0, 7); cx.fill(); cx.shadowBlur = 0;
+        if (n.kind === 'cat') { cx.strokeStyle = '#3ddc84'; cx.lineWidth = 1.5; cx.beginPath(); cx.arc(x, y, r + 3, 0, 7); cx.stroke(); }
+        const fs = n.kind === 'root' ? 15 : n.kind === 'cat' ? 14 : 12.5;
+        cx.font = `${n.kind === 'opt' ? 400 : 700} ${Math.round(fs * Math.min(1.1, Math.max(0.8, S)))}px ui-monospace, Menlo, Consolas, monospace`;
+        cx.fillStyle = n.kind === 'root' ? '#3ddc84' : sel || n === hover ? '#e8ffe8' : n.kind === 'cat' ? '#cfe9d6' : '#8fa597';
+        const lbl = labelOf(n);
+        if (n.kind === 'opt' && n.cat === 'key' && n.v === 'custom' && recording) cx.fillStyle = (t * 2) % 1 < 0.5 ? '#3ddc84' : '#1f6b40';
+        cx.fillText(lbl, x, y + r + (n.kind === 'root' ? 12 : 6));
+        cx.globalAlpha = 1;
+      }
+      if (flash) {
+        flash.t -= 1 / 60; cx.globalAlpha = Math.max(0, Math.min(1, flash.t));
+        cx.fillStyle = '#3ddc84'; cx.font = '600 14px ui-monospace, Menlo, monospace'; cx.fillText('[ok] ' + flash.text, W / 2, H - 62);
+        cx.globalAlpha = 1; if (flash.t <= 0) flash = null;
+      }
+    }
+    (function loop() { if (!document.body.contains(g)) return; t += 1 / 60; physics(); if (!drag) fit(); draw(); requestAnimationFrame(loop); })();
+
+    // Statuszeile oben tippt sich
+    const ln = g.querySelector('#ws-ln'), msg = '[ok] verbindung sicher · ' + (A.code ? 'user: ' + A.name : 'gast');
+    let li = 0; const typer = setInterval(() => { if (!document.body.contains(g)) return clearInterval(typer); ln.textContent = msg.slice(0, ++li); if (li >= msg.length) clearInterval(typer); }, 30);
+
+    // ---------- Eingabe ----------
+    const pick = (px, py) => {
+      let best = null, bd = 1e9;
+      for (const n of nodes) { const [x, y] = toScreen(n), d = Math.hypot(px - x, py - y); if (d < Math.max(18, n.r * S + 10) && d < bd) { bd = d; best = n; } }
+      return best;
+    };
+    let down = null;
+    g.addEventListener('pointermove', (e) => {
+      if (down && drag) { const dx = e.clientX - down.x, dy = e.clientY - down.y; if (Math.hypot(dx, dy) > 4) down.moved = true; drag.x = (e.clientX - W / 2) / S; drag.y = (e.clientY - H / 2) / SY; return; }
+      hover = pick(e.clientX, e.clientY); g.style.cursor = hover ? 'pointer' : 'default';
+    });
+    cv.addEventListener('pointerdown', (e) => {
+      const n = pick(e.clientX, e.clientY); if (!n) return;
+      down = { x: e.clientX, y: e.clientY, moved: false }; drag = n; hover = n; cv.setPointerCapture(e.pointerId);
+    });
+    cv.addEventListener('pointerup', (e) => {
+      const n = drag; drag = null; if (!down) return; const moved = down.moved; down = null;
+      if (!n || moved) return;
+      if (n.kind === 'root') { flash = { text: 'webswitch ' + (state.on === '1' ? 'aktiv' : 'aus'), t: 1.4 }; return; }
+      if (n.kind !== 'opt') return;
+      if (n.cat === 'url' && n.v === '__custom') return askUrl(n);
+      if (n.cat === 'key' && n.v === 'custom') { state.key = 'custom'; recording = true; return; }
+      state[n.cat] = n.v; recording = false;
+      if (n.cat === 'gesture' && n.v === 'shake') askMotion();
+      save(labelOf(n) + ' gewählt');
+    });
+    function askUrl(n) {
+      g.querySelector('.inp')?.remove();
+      const [x, y] = toScreen(n), box = document.createElement('div'); box.className = 'inp';
+      box.style.left = Math.max(170, Math.min(W - 170, x)) + 'px'; box.style.top = Math.min(H - 60, y + 30) + 'px';
+      box.innerHTML = `<input type="text" placeholder="adresse.de" spellcheck="false" autocomplete="off"><button type="button">OK</button>`;
+      g.appendChild(box);
+      const inp = box.querySelector('input'); inp.value = WS_URLS.includes(state.url) ? '' : state.url;
+      const ok = () => { const v = inp.value.trim(); box.remove(); if (!v) return; state.url = v; save('adresse gespeichert'); };
+      box.querySelector('button').onclick = ok;
+      inp.addEventListener('keydown', (e) => { e.stopPropagation(); if (e.key === 'Enter') ok(); if (e.key === 'Escape') box.remove(); });
+      setTimeout(() => inp.focus(), 30);
+    }
     g.addEventListener('keydown', (e) => {
       e.stopPropagation();
       if (recording) {
         e.preventDefault();
-        if (['Shift', 'Control', 'Alt', 'Meta', 'AltGraph'].includes(e.key)) return; // auf die eigentliche Taste warten
+        if (['Shift', 'Control', 'Alt', 'Meta', 'AltGraph'].includes(e.key)) return;
         state.custom = { code: e.code || e.key, alt: e.altKey, shift: e.shiftKey, ctrl: e.ctrlKey, meta: e.metaKey };
-        recording = false; recBox.classList.remove('wait'); recBox.textContent = comboName(state.custom) + ' · tippen zum Ändern';
+        state.key = 'custom'; recording = false; save('kürzel: ' + comboName(state.custom));
         return;
       }
-      if (e.key === 'Escape') g.remove();
+      if (e.key === 'Escape') close();
     }, true);
-    recBox.onclick = startRec;
-    const urlIn = g.querySelector('#ws-url'), presets = g.querySelector('#ws-presets');
-    const markPreset = () => presets.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x.dataset.u === urlIn.value.trim()));
-    presets.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; urlIn.value = b.dataset.u; markPreset(); });
-    urlIn.addEventListener('input', markPreset);
-    g.querySelectorAll('.opts').forEach((o) => o.addEventListener('click', (e) => {
-      const b = e.target.closest('button'); if (!b) return;
-      state[o.dataset.o] = b.dataset.v; o.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b));
-      if (o.dataset.o === 'key') { recBox.style.display = b.dataset.v === 'custom' ? 'block' : 'none'; if (b.dataset.v === 'custom' && !state.custom) startRec(); }
-      if (o.dataset.o === 'gesture' && b.dataset.v === 'shake') askMotion();
-    }));
-    g.querySelector('#ws-close').onclick = () => g.remove();
-    g.addEventListener('click', (e) => { if (e.target === g) g.remove(); });
-    g.querySelector('#ws-save').onclick = () => {
-      const key = state.key === 'custom' && !state.custom ? 'none' : state.key;
-      put('arcadia.webswitch', { url: g.querySelector('#ws-url').value.trim(), mode: state.mode, key, custom: state.custom, gesture: state.gesture, on: state.on === '1' });
-      g.remove();
-      const kn = key === 'custom' ? comboName(state.custom) : WS_KEYS[key].name;
-      toast('Webswitch gespeichert', 'Kürzel: ' + kn + ' · Geste: ' + WS_GESTURES[state.gesture]);
-    };
+    g.tabIndex = -1; g.focus();
   };
   // Versteckter Knopf: 5× schnell auf „COIN“ im Footer der Startseite
   addEventListener('DOMContentLoaded', () => {
