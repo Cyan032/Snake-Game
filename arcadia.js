@@ -302,13 +302,34 @@
   // Beim ersten Besuch automatisch zeigen
   addEventListener('DOMContentLoaded', () => { if (!A.code && !get('arcadia.skip', false)) A.showGate(); });
   // ---------- Easter Egg: Webswitch ----------
-  // Ein Tastenkürzel öffnet blitzschnell eine selbst gewählte Seite. Einstellen über einen versteckten Knopf
-  // (5× auf „COIN“ unten auf der Startseite tippen) oder mit Alt + Shift + W.
-  const WS_KEYS = { altq: { name: 'Alt + Q', test: (e) => e.altKey && !e.ctrlKey && !e.metaKey && e.code === 'KeyQ' },
-    shiftesc: { name: 'Shift + Esc', test: (e) => e.shiftKey && e.code === 'Escape' },
-    backquote: { name: '^ (Taste links neben der 1)', test: (e) => !e.ctrlKey && !e.altKey && !e.metaKey && (e.code === 'Backquote' || e.code === 'IntlBackslash') } };
-  const wsCfg = () => Object.assign({ url: '', mode: 'tab', key: 'altq', on: true }, get('arcadia.webswitch', {}));
+  // Ein Tastenkürzel oder eine Geste öffnet blitzschnell eine selbst gewählte Seite.
+  // Einstellen: 5× auf „COIN“ unten auf der Startseite tippen oder Alt + Shift + W.
+  const WS_KEYS = {
+    altq: { name: 'Alt + Q', combo: { code: 'KeyQ', alt: true } },
+    shiftesc: { name: 'Shift + Esc', combo: { code: 'Escape', shift: true } },
+    backquote: { name: '^ (links neben der 1)', combo: { code: 'Backquote' } },
+    custom: { name: 'Eigenes …' },
+    none: { name: 'Keins' },
+  };
+  const WS_GESTURES = {
+    three: 'Mit 3 Fingern tippen',
+    twodbl: 'Mit 2 Fingern doppelt tippen',
+    corner: 'Ecke oben rechts 3× tippen',
+    shake: 'Gerät schütteln',
+    none: 'Keine',
+  };
+  const wsCfg = () => Object.assign({ url: '', mode: 'tab', key: 'altq', custom: null, gesture: 'three', on: true }, get('arcadia.webswitch', {}));
+  const KEYLABEL = { Space: 'Leertaste', Escape: 'Esc', Backquote: '^', Enter: 'Enter', Backspace: '⌫', Tab: 'Tab', ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→' };
+  function comboName(c) {
+    if (!c) return '–';
+    const k = KEYLABEL[c.code] || c.code.replace(/^Key/, '').replace(/^Digit/, '').replace(/^Numpad/, 'Num ');
+    return [c.ctrl && 'Strg', c.meta && 'Cmd', c.alt && 'Alt', c.shift && 'Shift', k].filter(Boolean).join(' + ');
+  }
+  const comboMatch = (c, e) => !!c && e.code === c.code && !!c.alt === e.altKey && !!c.shift === e.shiftKey && !!c.ctrl === e.ctrlKey && !!c.meta === e.metaKey;
+  const activeCombo = (c) => (c.key === 'custom' ? c.custom : WS_KEYS[c.key] && WS_KEYS[c.key].combo);
+  let wsLast = 0;
   function wsGo() {
+    const now = Date.now(); if (now - wsLast < 800) return; wsLast = now;
     const c = wsCfg(); let url = (c.url || '').trim();
     if (!url) { A.webswitch(); return; }
     if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
@@ -316,53 +337,99 @@
     else if (c.mode === 'same') location.href = url;
     else { document.documentElement.style.display = 'none'; location.replace(url); } // sofort, ohne Zurück
   }
+  const wsReady = () => wsCfg().on && !document.getElementById('arc-ws');
   addEventListener('keydown', (e) => {
     if (e.altKey && e.shiftKey && e.code === 'KeyW') { e.preventDefault(); e.stopPropagation(); A.webswitch(); return; }
-    const c = wsCfg(), k = WS_KEYS[c.key];
-    if (!c.on || !k || !k.test(e)) return;
-    if (document.getElementById('arc-ws') || (e.target && /input|textarea/i.test(e.target.tagName))) return;
-    e.preventDefault(); e.stopPropagation(); wsGo();
+    if (!wsReady() || (e.target && /input|textarea/i.test(e.target.tagName))) return;
+    if (comboMatch(activeCombo(wsCfg()), e)) { e.preventDefault(); e.stopPropagation(); wsGo(); }
   }, true);
+
+  // Gesten für iPad und Handy
+  let twoTaps = 0, cornerTaps = [], shakes = [];
+  addEventListener('touchstart', (e) => {
+    if (!wsReady()) return;
+    const g = wsCfg().gesture, n = e.touches.length, now = Date.now();
+    if (g === 'three' && n === 3) { e.preventDefault(); wsGo(); }
+    else if (g === 'twodbl' && n === 2) { if (now - twoTaps < 450) { twoTaps = 0; e.preventDefault(); wsGo(); } else twoTaps = now; }
+  }, { capture: true, passive: false });
+  addEventListener('pointerdown', (e) => {
+    if (!wsReady() || wsCfg().gesture !== 'corner') return;
+    if (e.clientX < innerWidth - 70 || e.clientY > 70) return;
+    const now = Date.now(); cornerTaps = cornerTaps.filter((t) => now - t < 900); cornerTaps.push(now);
+    if (cornerTaps.length >= 3) { cornerTaps = []; wsGo(); }
+  }, true);
+  addEventListener('devicemotion', (e) => {
+    if (!wsReady() || wsCfg().gesture !== 'shake') return;
+    const a = e.accelerationIncludingGravity || e.acceleration; if (!a) return;
+    const m = Math.hypot(a.x || 0, a.y || 0, a.z || 0), now = Date.now();
+    if (m < 24) return;
+    shakes = shakes.filter((t) => now - t < 900); shakes.push(now);
+    if (shakes.length >= 3) { shakes = []; wsGo(); }
+  });
+  function askMotion() { try { if (window.DeviceMotionEvent && DeviceMotionEvent.requestPermission) DeviceMotionEvent.requestPermission().catch(() => {}); } catch (e) {} }
+
   A.webswitch = function () {
     if (document.getElementById('arc-ws')) return;
     if (!document.getElementById('arc-ws-css')) {
       const st = document.createElement('style'); st.id = 'arc-ws-css';
-      st.textContent = `#arc-ws { position: fixed; inset: 0; z-index: 99999; display: grid; place-items: center; padding: 16px; background: rgba(0,0,0,.7); font-family: 'Fredoka', system-ui, sans-serif; color: #e8ffe8; }
-        #arc-ws .box { width: min(420px, 100%); background: #08140a; border: 2px solid #3ddc84; border-radius: 18px; padding: 20px; box-shadow: 0 0 30px rgba(61,220,132,.35); font-size: 15px; }
+      st.textContent = `#arc-ws { position: fixed; inset: 0; z-index: 99999; display: grid; place-items: center; padding: 16px; overflow: auto; background: rgba(0,0,0,.7); font-family: 'Fredoka', system-ui, sans-serif; color: #e8ffe8; }
+        #arc-ws .box { width: min(440px, 100%); background: #08140a; border: 2px solid #3ddc84; border-radius: 18px; padding: 20px; box-shadow: 0 0 30px rgba(61,220,132,.35); font-size: 15px; }
         #arc-ws h2 { margin: 0 0 2px; font-family: ui-monospace, Menlo, monospace; color: #3ddc84; letter-spacing: 2px; }
         #arc-ws p { margin: 6px 0; color: #9fd8b0; line-height: 1.45; } #arc-ws label { display: block; margin: 12px 0 5px; font-weight: 600; }
         #arc-ws input[type=text] { width: 100%; box-sizing: border-box; padding: 11px 12px; border-radius: 10px; border: 2px solid #2a6b44; background: #020803; color: #e8ffe8; font: 500 16px ui-monospace, Menlo, monospace; outline: none; }
         #arc-ws input[type=text]:focus { border-color: #3ddc84; }
-        #arc-ws .opts { display: flex; flex-wrap: wrap; gap: 6px; } #arc-ws .opts button { flex: 1 1 auto; padding: 8px 10px; border-radius: 10px; border: 2px solid #2a6b44; background: transparent; color: #9fd8b0; font: 600 14px inherit; font-family: inherit; cursor: pointer; }
+        #arc-ws .opts { display: flex; flex-wrap: wrap; gap: 6px; } #arc-ws .opts button { flex: 1 1 auto; padding: 8px 10px; border-radius: 10px; border: 2px solid #2a6b44; background: transparent; color: #9fd8b0; font-weight: 600; font-size: 14px; font-family: inherit; cursor: pointer; }
         #arc-ws .opts button.on { background: #3ddc84; border-color: #3ddc84; color: #04140a; }
-        #arc-ws .row { display: flex; gap: 8px; margin-top: 16px; } #arc-ws .row button { flex: 1; padding: 11px; border-radius: 12px; border: 0; font: 700 15px inherit; font-family: inherit; cursor: pointer; background: #1c3a26; color: #e8ffe8; }
+        #arc-ws .rec { margin-top: 8px; padding: 12px; border-radius: 12px; border: 2px dashed #3ddc84; text-align: center; font: 600 16px ui-monospace, Menlo, monospace; color: #3ddc84; cursor: pointer; }
+        #arc-ws .rec.wait { animation: wsblink 1s steps(1) infinite; } @keyframes wsblink { 50% { opacity: .4; } }
+        #arc-ws .row { display: flex; gap: 8px; margin-top: 16px; } #arc-ws .row button { flex: 1; padding: 11px; border-radius: 12px; border: 0; font-weight: 700; font-size: 15px; font-family: inherit; cursor: pointer; background: #1c3a26; color: #e8ffe8; }
         #arc-ws .row button.go { background: #3ddc84; color: #04140a; }`;
       document.head.appendChild(st);
     }
     const c = wsCfg(), g = document.createElement('div'); g.id = 'arc-ws';
-    g.addEventListener('keydown', (e) => { e.stopPropagation(); if (e.key === 'Escape') g.remove(); });
+    const state = { mode: c.mode, key: c.key, custom: c.custom, gesture: c.gesture, on: c.on ? '1' : '0' };
+    let recording = false;
     const MODES = { tab: 'Neuer Tab', same: 'Gleicher Tab', fast: 'Sofort weg (ohne Zurück)' };
     const opts = (name, list, cur) => `<div class="opts" data-o="${name}">${Object.entries(list).map(([k, v]) => `<button type="button" data-v="${k}" class="${k === cur ? 'on' : ''}">${v}</button>`).join('')}</div>`;
-    g.innerHTML = `<div class="box"><h2>&gt; WEBSWITCH_</h2><p>Du hast das Easter Egg gefunden. Mit deinem Tastenkürzel springst du von jeder Arcadia-Seite sofort auf diese Adresse.</p>
+    g.innerHTML = `<div class="box"><h2>&gt; WEBSWITCH_</h2><p>Du hast das Easter Egg gefunden. Mit deinem Kürzel oder deiner Geste springst du von jeder Arcadia-Seite sofort auf diese Adresse.</p>
       <label>Adresse</label><input type="text" id="ws-url" placeholder="z. B. wikipedia.org" value="${esc(c.url)}" autocomplete="off" spellcheck="false">
       <label>Öffnen</label>${opts('mode', MODES, c.mode)}
       <label>Tastenkürzel</label>${opts('key', Object.fromEntries(Object.entries(WS_KEYS).map(([k, v]) => [k, v.name])), c.key)}
+      <div class="rec" id="ws-rec" style="display:${c.key === 'custom' ? 'block' : 'none'}">${c.custom ? comboName(c.custom) + ' · tippen zum Ändern' : 'Hier tippen und dann Taste drücken'}</div>
+      <label>Geste (iPad und Handy)</label>${opts('gesture', WS_GESTURES, c.gesture)}
       <label>Webswitch</label>${opts('on', { 1: 'An', 0: 'Aus' }, c.on ? '1' : '0')}
       <p style="font-size:13px">Dieses Menü öffnest du wieder mit Alt + Shift + W oder 5× auf „COIN“ unten auf der Startseite.</p>
       <div class="row"><button type="button" id="ws-close">Schließen</button><button type="button" class="go" id="ws-save">Speichern</button></div></div>`;
     document.body.appendChild(g);
-    const state = { mode: c.mode, key: c.key, on: c.on ? '1' : '0' };
+    const recBox = g.querySelector('#ws-rec');
+    function startRec() { recording = true; recBox.classList.add('wait'); recBox.textContent = 'Jetzt Taste oder Kombination drücken …'; }
+    g.addEventListener('keydown', (e) => {
+      e.stopPropagation();
+      if (recording) {
+        e.preventDefault();
+        if (['Shift', 'Control', 'Alt', 'Meta', 'AltGraph'].includes(e.key)) return; // auf die eigentliche Taste warten
+        state.custom = { code: e.code || e.key, alt: e.altKey, shift: e.shiftKey, ctrl: e.ctrlKey, meta: e.metaKey };
+        recording = false; recBox.classList.remove('wait'); recBox.textContent = comboName(state.custom) + ' · tippen zum Ändern';
+        return;
+      }
+      if (e.key === 'Escape') g.remove();
+    }, true);
+    recBox.onclick = startRec;
     g.querySelectorAll('.opts').forEach((o) => o.addEventListener('click', (e) => {
       const b = e.target.closest('button'); if (!b) return;
       state[o.dataset.o] = b.dataset.v; o.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b));
+      if (o.dataset.o === 'key') { recBox.style.display = b.dataset.v === 'custom' ? 'block' : 'none'; if (b.dataset.v === 'custom' && !state.custom) startRec(); }
+      if (o.dataset.o === 'gesture' && b.dataset.v === 'shake') askMotion();
     }));
     g.querySelector('#ws-close').onclick = () => g.remove();
     g.addEventListener('click', (e) => { if (e.target === g) g.remove(); });
     g.querySelector('#ws-save').onclick = () => {
-      put('arcadia.webswitch', { url: g.querySelector('#ws-url').value.trim(), mode: state.mode, key: state.key, on: state.on === '1' });
-      g.remove(); toast('Webswitch gespeichert', 'Kürzel: ' + WS_KEYS[state.key].name);
+      const key = state.key === 'custom' && !state.custom ? 'none' : state.key;
+      put('arcadia.webswitch', { url: g.querySelector('#ws-url').value.trim(), mode: state.mode, key, custom: state.custom, gesture: state.gesture, on: state.on === '1' });
+      g.remove();
+      const kn = key === 'custom' ? comboName(state.custom) : WS_KEYS[key].name;
+      toast('Webswitch gespeichert', 'Kürzel: ' + kn + ' · Geste: ' + WS_GESTURES[state.gesture]);
     };
-    setTimeout(() => g.querySelector('#ws-url').focus(), 50);
   };
   // Versteckter Knopf: 5× schnell auf „COIN“ im Footer der Startseite
   addEventListener('DOMContentLoaded', () => {
