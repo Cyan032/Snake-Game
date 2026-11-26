@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#4a752c">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Vier in Reihe – Arcadia</title>
-<script src="/arcadia.js?v=8"></script>
+<script src="/arcadia.js?v=9"></script>
 <link rel="icon" type="image/png" sizes="64x64" href="/icons/favicon-64.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
 <link rel="manifest" href="/manifest.webmanifest">
@@ -63,6 +63,8 @@
   .turn { display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 600; }
   .turn i { width: 20px; height: 20px; border-radius: 50%; box-shadow: 0 0 0 3px rgba(255,255,255,.3); }
   .keys { font-size: 13px; color: var(--muted); text-align: center; margin: 12px 0 0; line-height: 1.6; }
+  .modeinfo { margin: 6px 4px 0; font-size: 13px; color: var(--muted); line-height: 1.45; }
+  .seg button:disabled { opacity: .45; cursor: default; }
 </style>
 </head>
 <body>
@@ -88,6 +90,7 @@
     <a class="home" href="/">‹ Arcadia</a>
     <h1>Vier in Reihe</h1>
     <p class="result" id="result"></p>
+    <div class="row"><label>Modus</label><div class="seg" data-s="mode"></div><p class="modeinfo" id="modeinfo"></p></div>
     <div class="row"><label>Gegner</label><div class="seg" data-s="opp"></div></div>
     <div class="row"><label>Wer fängt an</label><div class="seg" data-s="first"></div></div>
     <div class="row"><label>Spielfeld</label><div class="seg" data-s="size"></div></div>
@@ -109,6 +112,7 @@
 
   // ---------- Einstellungen ----------
   const OPTS = {
+    mode: { label: ['Rekord-Modus', 'Frei spielen'], val: [1, 0], def: 0 },
     opp:   { label: ['Leicht', 'Mittel', 'Schwer', 'Profi', '2 Spieler'], val: [1, 2, 3, 4, 0], def: 1 },
     first: { label: ['Du', 'Gegner', 'Abwechselnd'], val: [0, 1, 2], def: 2 },
     size:  { label: ['7 × 6', '8 × 7', '9 × 7'], val: [[7, 6], [8, 7], [9, 7]], def: 0 },
@@ -125,26 +129,44 @@
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem('vier.settings') || '{}'); } catch (e) {}
   for (const k in OPTS) set[k] = Number.isInteger(saved[k]) && saved[k] < OPTS[k].val.length ? saved[k] : OPTS[k].def;
-  const v = (k) => OPTS[k].val[set[k]];
+  // Rekord-Modus: feste Standard-Einstellungen, nur dann zählen Rekorde
+  const REC = { opp: 2, first: 2, size: 0 };
+  const rec = () => set.mode === 0;
+  const idx = (k) => (rec() && k in REC ? REC[k] : set[k]);
+  const v = (k) => OPTS[k].val[idx(k)];
   const save = () => { try { localStorage.setItem('vier.settings', JSON.stringify(set)); } catch (e) {} };
   const stats = () => { try { return JSON.parse(localStorage.getItem('vier.stats') || '{}'); } catch (e) { return {}; } };
+
+  // Siegesserie im Rekord-Modus: Sieg +1, Niederlage beendet die Serie, Unentschieden zählt nicht
+  function streakResult(what) {
+    if (!rec()) return;
+    let st = 0, best = 0;
+    try { st = +localStorage.getItem('vier.streak') || 0; best = +localStorage.getItem('vier.rec') || 0; } catch (e) {}
+    if (what === 'w') st++; else if (what === 'l') st = 0;
+    try { localStorage.setItem('vier.streak', String(st)); if (st > best) localStorage.setItem('vier.rec', String(st)); } catch (e) {}
+  }
+  const streakInfo = () => { try { return { now: +localStorage.getItem('vier.streak') || 0, best: +localStorage.getItem('vier.rec') || 0 }; } catch (e) { return { now: 0, best: 0 }; } };
   function addStat(level, what) {
+    streakResult(what);
     const s = stats(), k = 'k' + level; s[k] = s[k] || { w: 0, l: 0, d: 0 }; s[k][what]++;
     try { localStorage.setItem('vier.stats', JSON.stringify(s)); } catch (e) {}
   }
   const colors = () => [null, v('color'), '#f4c20d'];
 
   function buildMenu() {
+    const mi = document.getElementById('modeinfo');
+    if (mi) mi.textContent = rec() ? 'Feste Einstellungen, nur hier zählen Rekorde: KI Schwer · abwechselnd anfangen · Feld 7×6 · kein Zurücknehmen. Gewertet wird deine längste Siegesserie.' : 'Eigene Einstellungen, hier werden keine Rekorde gespeichert.';
     document.querySelectorAll('.seg[data-s]').forEach((seg) => {
       const k = seg.dataset.s; seg.innerHTML = '';
       OPTS[k].label.forEach((l, i) => {
         const b = document.createElement('button'); b.type = 'button';
         if (k === 'color') { b.innerHTML = `<i style="background:${OPTS.color.val[i]}"></i>`; b.title = 'Farbe ' + (i + 1); }
         else b.textContent = l;
-        b.className = i === set[k] ? 'on' : '';
+        b.className = i === idx(k) ? 'on' : '';
+        if (rec() && k in REC) b.disabled = true;
         b.onclick = () => {
-          const old = JSON.stringify([set.opp, set.size]); set[k] = i; save(); buildMenu(); applyWorld();
-          if (JSON.stringify([set.opp, set.size]) !== old) { score = [0, 0, 0]; newGame(); } else hud();
+          const old = JSON.stringify([idx('opp'), idx('size'), set.mode]); set[k] = i; save(); buildMenu(); applyWorld();
+          if (JSON.stringify([idx('opp'), idx('size'), set.mode]) !== old) { score = [0, 0, 0]; newGame(); } else hud();
         };
         seg.appendChild(b);
       });
@@ -264,6 +286,7 @@
   }
   function later() { setTimeout(() => { if (winner && !menuOpen()) openMenu(); }, 1500); }
   function undo() {
+    if (rec()) { beep(150, 0.06, 'square', 0.03); return; } // im Rekord-Modus kein Zurücknehmen
     if (anim || busy || !history.length) return;
     if (winner === 1 || winner === 2) score[winner]--;
     if (winner === 3) score[0]--;
@@ -313,6 +336,7 @@
     const n = NAMES(), s = stats()['k' + v('opp')];
     let r = winner === 3 ? 'Unentschieden!' : winner ? `<b>${winner === 1 && vsAI() ? 'Du hast gewonnen!' : n[winner] + ' hat gewonnen!'}</b>` : (history.length ? 'Pause' : 'Bring vier Steine in eine Reihe!');
     if (vsAI() && s) r += `<br>Gegen ${OPTS.opp.label[set.opp]}: ${s.w} Siege · ${s.l} Niederlagen · ${s.d} Unentschieden`;
+    if (rec()) { const si = streakInfo(); r += `<br>Siegesserie: <b>${si.now}</b> · Rekord: <b>${si.best}</b>`; }
     $('result').innerHTML = r;
     $('start').textContent = winner ? 'Nächste Runde' : (history.length ? 'Weiter' : 'Spielen');
     $('menu').classList.remove('hidden');

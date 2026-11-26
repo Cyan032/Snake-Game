@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0d0520">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Rekorde – Arcadia</title>
-<script src="/arcadia.js?v=8"></script>
+<script src="/arcadia.js?v=9"></script>
 <link rel="icon" type="image/png" sizes="64x64" href="/icons/favicon-64.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
 <link rel="manifest" href="/manifest.webmanifest">
@@ -63,7 +63,7 @@
 <div class="wrap">
   <a class="back" href="/">‹ Arcadia</a>
   <h1>Rekorde</h1>
-  <p class="sub">Als Rekord zählt nur, was unter fairen Einstellungen geschafft wurde.<br>Leichtere Einstellungen stehen getrennt darunter.</p>
+  <p class="sub">Rekorde zählen nur im Rekord-Modus – mit festen Standard-Einstellungen für alle.<br>Wer frei spielt, kann alles einstellen, sammelt dafür aber keine Rekorde.</p>
   <section class="game" id="konto"></section>
   <section class="game" id="welt">
     <div class="head"><h2>Weltweit Top 10</h2></div>
@@ -86,40 +86,15 @@
   const tile = (label, value, note = '') => `<div class="tile"><div class="l">${label}</div><div class="v">${value}</div><div class="n">${note}</div></div>`;
   const card = (name, href, inner) => out.push(`<section class="game" id="${href.replace(/\//g, '')}"><div class="head"><h2>${name}</h2><a href="${href}">SPIELEN ›</a></div>${inner}</section>`);
 
-  // Für Spiele mit Einstellungen: Schlüssel "prefix + Ziffern" auslesen und in fair / leichter aufteilen
-  function combos(prefix, opts, isFair) {
-    const list = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (!k || !k.startsWith(prefix)) continue;
-      const digits = k.slice(prefix.length).split('').map(Number), val = +localStorage.getItem(k);
-      if (!val || digits.length !== opts.length || digits.some(isNaN)) continue;
-      list.push({ val, fair: isFair(digits), text: opts.map(([name, labels], j) => `${name} ${labels[digits[j]]}`).join(' · ') });
-    }
-    list.sort((a, b) => b.val - a.val);
-    return { fair: list.filter((x) => x.fair), easy: list.filter((x) => !x.fair) };
-  }
-  function comboBlock(c, unit, fairRule) {
-    let h = '';
-    if (c.fair.length) {
-      h += `<div class="big">${tile('Rekord', c.fair[0].val + unit, esc(c.fair[0].text))}</div>`;
-      if (c.fair.length > 1) h += `<details><summary>Weitere faire Rekorde (${c.fair.length - 1})</summary><table>${c.fair.slice(1).map((x) => `<tr><td><span class="n">${esc(x.text)}</span></td><td>${x.val}${unit}</td></tr>`).join('')}</table></details>`;
-    } else h += `<p class="none">Noch kein fairer Rekord.</p>`;
-    if (c.easy.length) h += `<details><summary>Mit leichteren Einstellungen (${c.easy.length}), zählt nicht als Rekord</summary><table>${c.easy.map((x) => `<tr><td><span class="n">${esc(x.text)}</span></td><td>${x.val}${unit}</td></tr>`).join('')}</table></details>`;
-    return h + `<p class="note">Fair heißt: ${fairRule}</p>`;
-  }
-
   // ---------- Snake ----------
   {
     const MODES = [['classic', 'Klassisch'], ['wrap', 'Ohne Wände'], ['walls', 'Hindernisse'], ['portal', 'Portale'], ['poison', 'Gift'], ['turbo', 'Turbo'],
       ['time', 'Zeitrennen'], ['mirror', 'Spiegel'], ['dark', 'Dunkel'], ['flee', 'Fluchtäpfel'], ['hunger', 'Hunger'], ['zone', 'Zone'], ['chaos', 'Chaos']];
-    const rows = MODES.map(([id, name]) => ({ id, name, fair: get('snake.fair.' + id, 0), old: get('snake.best.' + id, 0) }));
-    const main = rows[0];
-    let h = `<div class="big">${tile('Klassisch', main.fair || '–', 'Hauptrekord')}${tile('Bester Modus', Math.max(0, ...rows.map((r) => r.fair)) || '–', (rows.slice().sort((a, b) => b.fair - a.fair)[0].fair ? rows.slice().sort((a, b) => b.fair - a.fair)[0].name : ''))}</div>`;
-    h += `<table>${rows.map((r) => `<tr><td>${r.name}</td><td>${r.fair || '<span class="n">–</span>'}</td></tr>`).join('')}</table>`;
-    const olds = rows.filter((r) => r.old > r.fair);
-    if (olds.length) h += `<details><summary>Ältere Bestwerte (Einstellungen unbekannt, zählen nicht)</summary><table>${olds.map((r) => `<tr><td>${r.name}</td><td>${r.old}</td></tr>`).join('')}</table></details>`;
-    // Parkour
+    const rows = MODES.map(([id, name]) => ({ id, name, v: get('snake.rec.' + id, 0) }));
+    const top = rows.slice().sort((a, b) => b.v - a.v)[0];
+    let h = `<div class="big">${tile('Klassisch', rows[0].v || '–', 'Hauptrekord')}${tile('Bester Modus', top.v || '–', top.v ? top.name : '')}</div>`;
+    h += `<table>${rows.map((r) => `<tr><td>${r.name}</td><td>${r.v || '<span class="n">–</span>'}</td></tr>`).join('')}</table>`;
+    // Parkour: die Level sind immer gleich, deshalb zählt hier alles
     const LV = window.SNAKE_LEVELS || [], park = get('snake.park', {}), TIERS = ['Leicht', 'Mittel', 'Schwer', 'Profi'];
     const starsOf = (lv) => lv.map.join('').split('*').length - 1 + (lv.stars || []).length;
     const total = LV.reduce((a, lv) => a + starsOf(lv), 0), got = LV.reduce((a, lv) => a + ((park[lv.id] || {}).s || 0), 0);
@@ -129,73 +104,45 @@
       const r = park[lv.id], n = starsOf(lv);
       return `<tr><td>${esc(lv.name)} <span class="n">${TIERS[lv.tier] || ''}</span> <span class="stars">${'★'.repeat(r.s)}<i>${'★'.repeat(Math.max(0, n - r.s))}</i></span></td><td>${fmtMs(r.t)}</td></tr>`;
     }).join('')}</table></details>`;
-    h += `<p class="note">Fair heißt: 1 Apfel gleichzeitig und Tempo Normal oder Schnell. Friedlich, 2 Spieler und Gegen KI haben keine Rekorde.</p>`;
+    h += `<p class="note">Rekord-Modus: Feld Mittel, Tempo Normal, 1 Apfel, Karte Offen. Friedlich, 2 Spieler und Gegen KI haben keine Rekorde. Im Parkour zählt jedes Level, weil die Level immer gleich sind.</p>`;
     card('Snake', '/snake/', h);
   }
 
-  // ---------- Flappy Bird ----------
-  card('Flappy Bird', '/flug/', comboBlock(combos('flug.best.', [
-    ['Tempo', ['Langsam', 'Normal', 'Schnell', 'Turbo']], ['Lücke', ['Klein', 'Mittel', 'Groß', 'Riesig']],
-    ['Abstand', ['Eng', 'Normal', 'Weit']], ['Schwerkraft', ['Leicht', 'Normal', 'Stark']], ['Schwerer', ['Aus', 'An']],
-  ], ([sp, gap, spc, gr, ramp]) => sp >= 1 && gap <= 1 && spc <= 1 && gr >= 1 && ramp === 1), ' Pkt.',
-  'Tempo mindestens Normal, Lücke höchstens Mittel, Abstand höchstens Normal, Schwerkraft mindestens Normal und „Wird schwerer“ an.'));
+  // Spiele mit einem Rekord-Wert
+  const simple = (name, href, key, unit, rule, extra = '') => {
+    const val = get(key, 0);
+    card(name, href, `<div class="big">${tile('Rekord', val ? val + unit : '–', 'im Rekord-Modus')}</div>${extra}<p class="note">Rekord-Modus: ${rule}</p>`);
+  };
+  simple('Flappy Bird', '/flug/', 'flug.rec', ' Pkt.', 'Tempo Normal, Lücke Mittel, Abstand Normal, wird schwerer.');
+  simple('Dino Runner', '/dino/', 'dino.rec', ' m', 'Tempo Normal, wird schneller, Hindernisse Normal, mit Bienen.');
+  simple('Blockfall', '/block/', 'block.rec', ' Pkt.', 'Start-Level 5, wird schneller, Feld 10×20, Vorschau, Schatten und Halten an.');
+  simple('Fruit Drop', '/fruit/', 'fruit.rec', ' Pkt.', 'Kiste Normal, Schwerkraft Normal, nächste Frucht sichtbar.');
+  simple('Stack', '/stack/', 'stack.rec', ' Blöcke', 'Tempo Normal, wird schneller, Perfekt-Bereich Normal.');
+  simple('Only Up', '/up/', 'up.rec', ' m', 'Plattform-Abstand Normal, fiese Plattformen Normal.');
 
-  // ---------- Dino Runner ----------
-  card('Dino Runner', '/dino/', comboBlock(combos('dino.best.', [
-    ['Tempo', ['Langsam', 'Normal', 'Schnell', 'Turbo']], ['Schneller', ['Aus', 'Normal', 'Stark']],
-    ['Hindernisse', ['Wenig', 'Normal', 'Viel']], ['Sprung', ['Niedrig', 'Normal', 'Hoch']], ['Bienen', ['Aus', 'An']],
-  ], ([sp, ramp, den, jump, bees]) => sp >= 1 && ramp >= 1 && den >= 1 && jump <= 1 && bees === 1), ' m',
-  'Tempo mindestens Normal, „Wird schneller“ an, Hindernisse mindestens Normal, Sprungkraft höchstens Normal und Bienen an.'));
-
-  // ---------- Blockfall ----------
-  card('Blockfall', '/block/', comboBlock(combos('block.best.', [
-    ['Start-Level', ['1', '3', '5', '8', '10']], ['Schneller', ['Aus', 'An']], ['Feld', ['Klein', 'Normal', 'Breit']],
-  ], ([st, ramp, size]) => ramp === 1 && size === 1), ' Pkt.',
-  '„Wird schneller“ an und Spielfeld Normal. Das Start-Level ist egal, weil höhere Level schneller sind.'));
-
-  // ---------- Only Up ----------
-  card('Only Up', '/up/', comboBlock(combos('up.best.', [
-    ['Abstand', ['Eng', 'Normal', 'Weit']], ['Fiese Plattformen', ['Wenig', 'Normal', 'Viel']],
-  ], ([gap, tr]) => gap >= 1 && tr >= 1), ' m', 'Plattform-Abstand mindestens Normal und fiese Plattformen mindestens Normal.'));
-
-  // ---------- Stack ----------
-  card('Stack', '/stack/', comboBlock(combos('stack.best.', [
-    ['Tempo', ['Langsam', 'Normal', 'Schnell']], ['Schneller', ['Aus', 'An']], ['Perfekt-Bereich', ['Klein', 'Normal', 'Groß']],
-  ], ([sp, ramp, tol]) => sp >= 1 && ramp === 1 && tol <= 1), ' Blöcke', 'Tempo mindestens Normal, „Wird schneller“ an und Perfekt-Bereich höchstens Normal.'));
-
-  // ---------- Fruit Drop ----------
-  card('Fruit Drop', '/fruit/', comboBlock(combos('fruit.best.', [
-    ['Kiste', ['Breit', 'Normal', 'Schmal']], ['Schwerkraft', ['Leicht', 'Normal', 'Stark']],
-  ], ([box]) => box >= 1), ' Pkt.', 'Kiste Normal oder Schmal. Die breite Kiste ist leichter.'));
-
-  // ---------- Vier in Reihe ----------
+  // ---------- Vier in Reihe und Tic Tac Toe: Siegesserie ----------
+  const statTable = (s, labels, fmtKey) => {
+    const rows = Object.keys(s).sort().map((k) => `<tr><td>${fmtKey(k)}</td><td><span class="n">${s[k].w} S · ${s[k].l} N · ${s[k].d} U</span></td></tr>`);
+    return rows.length ? `<details><summary>Statistik gegen die KI</summary><table>${rows.join('')}</table></details>` : '';
+  };
   {
-    const s = get('vier.stats', {}), L = ['', 'Leicht', 'Mittel', 'Schwer', 'Profi'];
-    const t = (k) => s['k' + k] || { w: 0, l: 0, d: 0 };
-    let h = `<div class="big">${tile('Siege gegen Profi', t(4).w, t(4).l + ' Niederlagen · ' + t(4).d + ' Unentschieden')}${tile('Siege gegen Schwer', t(3).w, t(3).l + ' Niederlagen')}</div>`;
-    h += `<table>${[1, 2, 3, 4].map((k) => `<tr><td>${L[k]}</td><td><span class="n">${t(k).w} S · ${t(k).l} N · ${t(k).d} U</span></td></tr>`).join('')}</table>`;
-    h += `<p class="note">In der weltweiten Liste zählen nur Siege gegen die KI-Stufe Profi. Spiele zu zweit werden nicht gewertet.</p>`;
-    card('Vier in Reihe', '/vier/', h);
+    const L = ['', 'Leicht', 'Mittel', 'Schwer', 'Profi'];
+    card('Vier in Reihe', '/vier/', `<div class="big">${tile('Längste Siegesserie', get('vier.rec', 0), 'aktuell: ' + get('vier.streak', 0))}</div>`
+      + statTable(get('vier.stats', {}), L, (k) => L[+k[1]] || k)
+      + `<p class="note">Rekord-Modus: KI Schwer, abwechselnd anfangen, Feld 7×6, kein Zurücknehmen. Eine Niederlage beendet die Serie, Unentschieden zählt nicht.</p>`);
   }
-
-  // ---------- Tic Tac Toe ----------
   {
-    const s = get('ttt.stats', {}), L = ['', 'Leicht', 'Mittel', 'Unschlagbar'], F = ['3×3', '4×4', '5×5'];
-    const rows = [];
-    for (let o = 1; o <= 3; o++) for (let z = 0; z < 3; z++) { const x = s['k' + o + 's' + z]; if (x) rows.push(`<tr><td>${L[o]} <span class="n">${F[z]}</span></td><td><span class="n">${x.w} S · ${x.l} N · ${x.d} U</span></td></tr>`); }
-    const u = s.k3s0 || { w: 0, l: 0, d: 0 };
-    let h = `<div class="big">${tile('Gegen Unschlagbar (3×3)', u.d + u.w, 'nicht verloren (Unentschieden zählt)')}</div>`;
-    h += rows.length ? `<table>${rows.join('')}</table>` : `<p class="none">Noch keine Spiele gegen die KI.</p>`;
-    h += `<p class="note">Die KI „Unschlagbar“ macht auf 3×3 keine Fehler – ein Unentschieden ist dort das Beste, was geht.</p>`;
-    card('Tic Tac Toe', '/ttt/', h);
+    const L = ['', 'Leicht', 'Mittel', 'Unschlagbar'], F = ['3×3', '4×4', '5×5'];
+    card('Tic Tac Toe', '/ttt/', `<div class="big">${tile('Längste Siegesserie', get('ttt.rec', 0), 'aktuell: ' + get('ttt.streak', 0))}</div>`
+      + statTable(get('ttt.stats', {}), L, (k) => (L[+k[1]] || k) + ' ' + (F[+k[3]] || ''))
+      + `<p class="note">Rekord-Modus: KI Mittel, abwechselnd anfangen, Feld 3×3, kein Zurücknehmen. Eine Niederlage beendet die Serie, Unentschieden zählt nicht.</p>`);
   }
 
   // ---------- Solitaire ----------
   {
-    const s = get('sol.stats', {});
-    let h = `<div class="big">${tile('Siege', s.wins || 0)}${tile('Bestzeit · 1 Karte', s.best1 ? fmt(s.best1) : '–')}${tile('Bestzeit · 3 Karten', s.best3 ? fmt(s.best3) : '–')}</div>`;
-    h += `<p class="note">1 Karte und 3 Karten werden getrennt gewertet, weil 3 Karten deutlich schwerer ist.</p>`;
-    card('Solitaire', '/solitaire/', h);
+    const s = get('sol.stats', {}), r = get('sol.rec', 0);
+    card('Solitaire', '/solitaire/', `<div class="big">${tile('Bestzeit', r ? fmtMs(r) : '–', 'im Rekord-Modus')}${tile('Siege', s.wins || 0, 'insgesamt')}</div>
+      <p class="note">Rekord-Modus: 1 Karte ziehen, automatisch ablegen am Ende. Gewertet wird die schnellste gewonnene Runde.</p>`);
   }
 
   document.getElementById('list').innerHTML = out.join('');
@@ -236,7 +183,8 @@
 
   // ---------- Weltweite Bestenliste ----------
   const WB = [['snake-classic', 'Snake Klassisch', ''], ['snake-park', 'Snake Parkour', ' ★'], ['flug', 'Flappy Bird', ' Pkt.'], ['dino', 'Dino Runner', ' m'],
-    ['block', 'Blockfall', ' Pkt.'], ['fruit', 'Fruit Drop', ' Pkt.'], ['stack', 'Stack', ' Blöcke'], ['up', 'Only Up', ' m'], ['vier', 'Vier in Reihe', ' Siege'], ['sol1', 'Solitaire (1)', 't'], ['sol3', 'Solitaire (3)', 't']];
+    ['block', 'Blockfall', ' Pkt.'], ['fruit', 'Fruit Drop', ' Pkt.'], ['stack', 'Stack', ' Blöcke'], ['up', 'Only Up', ' m'], ['vier', 'Vier in Reihe', ' in Folge'],
+    ['ttt', 'Tic Tac Toe', ' in Folge'], ['sol', 'Solitaire', 't']];
   let wdata = null, wsel = 'snake-classic';
   try { wsel = sessionStorage.getItem('rek.welt') || wsel; } catch (e) {}
   function wrender() {
@@ -266,7 +214,7 @@
     const del = [];
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
-      if (/^(snake\.(best|fair)\.|snake\.park$|flug\.best\.|dino\.best\.|block\.best\.|fruit\.best\.|stack\.best\.|up\.best\.|sol\.stats$|vier\.stats$|ttt\.stats$)/.test(k)) del.push(k);
+      if (/^(snake\.(best|fair|rec)\.|snake\.park$|(flug|dino|block|fruit|stack|up)\.(best\.|rec$)|(vier|ttt|sol)\.(rec|streak|stats)$)/.test(k)) del.push(k);
     }
     del.forEach((k) => localStorage.removeItem(k)); location.reload();
   };

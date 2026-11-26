@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#4a752c">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Stack – Arcadia</title>
-<script src="/arcadia.js?v=8"></script>
+<script src="/arcadia.js?v=9"></script>
 <link rel="icon" type="image/png" sizes="64x64" href="/icons/favicon-64.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
 <link rel="manifest" href="/manifest.webmanifest">
@@ -59,6 +59,8 @@
   .btn.primary { background: var(--blue); color: #fff; box-shadow: 0 4px 0 var(--blue-dark); }
   .btn.primary:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--blue-dark); }
   #board { touch-action: none; cursor: pointer; }
+  .modeinfo { margin: 6px 4px 0; font-size: 13px; color: var(--muted); line-height: 1.45; }
+  .seg button:disabled { opacity: .45; cursor: default; }
   .keys { font-size: 13px; color: var(--muted); text-align: center; margin: 12px 0 0; line-height: 1.6; }
 </style>
 </head>
@@ -79,6 +81,7 @@
     <a class="home" href="/">‹ Arcadia</a>
     <h1>Stack</h1>
     <p class="result" id="result"></p>
+    <div class="row"><label>Modus</label><div class="seg" data-s="mode"></div><p class="modeinfo" id="modeinfo"></p></div>
     <div class="row"><label>Tempo</label><div class="seg" data-s="speed"></div></div>
     <div class="row"><label>Wird schneller</label><div class="seg" data-s="ramp"></div></div>
     <div class="row"><label>Perfekt-Bereich</label><div class="seg" data-s="tol"></div></div>
@@ -100,6 +103,7 @@
 
   // ---------- Einstellungen ----------
   const OPTS = {
+    mode: { label: ['Rekord-Modus', 'Frei spielen'], val: [1, 0], def: 0 },
     speed: { label: ['Langsam', 'Normal', 'Schnell'], val: [170, 230, 300], def: 1 },
     ramp:  { label: ['Aus', 'An'], val: [0, 1], def: 1 },
     tol:   { label: ['Klein', 'Normal', 'Groß'], val: [3, 6, 11], def: 1 },
@@ -116,17 +120,24 @@
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem('stack.settings') || '{}'); } catch (e) {}
   for (const k in OPTS) set[k] = Number.isInteger(saved[k]) && saved[k] < OPTS[k].val.length ? saved[k] : OPTS[k].def;
-  const v = (k) => OPTS[k].val[set[k]];
+  // Rekord-Modus: feste Standard-Einstellungen, nur dann zählen Rekorde
+  const REC = { speed: 1, ramp: 1, tol: 1 };
+  const rec = () => set.mode === 0;
+  const idx = (k) => (rec() && k in REC ? REC[k] : set[k]);
+  const v = (k) => OPTS[k].val[idx(k)];
   const save = () => { try { localStorage.setItem('stack.settings', JSON.stringify(set)); } catch (e) {} };
-  const bestKey = () => 'stack.best.' + set.speed + set.ramp + set.tol;
-  const getBest = () => { try { return +localStorage.getItem(bestKey()) || 0; } catch (e) { return 0; } };
+  const bestKey = () => 'stack.rec';
+  const getBest = () => { if (!rec()) return 0; try { return +localStorage.getItem(bestKey()) || 0; } catch (e) { return 0; } };
 
   function buildMenu() {
+    const mi = document.getElementById('modeinfo');
+    if (mi) mi.textContent = rec() ? 'Feste Einstellungen, nur hier zählen Rekorde: Tempo Normal · wird schneller · Perfekt-Bereich Normal.' : 'Eigene Einstellungen, hier werden keine Rekorde gespeichert.';
     document.querySelectorAll('.seg[data-s]').forEach((seg) => {
       const k = seg.dataset.s; seg.innerHTML = '';
       OPTS[k].label.forEach((l, i) => {
         const b = document.createElement('button'); b.type = 'button'; b.textContent = l;
-        b.className = i === set[k] ? 'on' : '';
+        b.className = i === idx(k) ? 'on' : '';
+        if (rec() && k in REC) b.disabled = true;
         b.onclick = () => { set[k] = i; save(); buildMenu(); applyWorld(); if (k !== 'world' && k !== 'pal') newGame(); };
         seg.appendChild(b);
       });
@@ -186,7 +197,7 @@
   function gameOver() {
     window.Arcadia && Arcadia.xp(Math.min(120, 5 + score), 'Stack');
     state = 'over'; overT = 0; beep(160, 0.45, 'sawtooth', 0.06);
-    if (score > getBest()) { try { localStorage.setItem(bestKey(), score); } catch (e) {} }
+    if (score > getBest()) { try { if (rec()) localStorage.setItem(bestKey(), score); } catch (e) {} }
     setTimeout(() => { if (state === 'over' && !menuOpen()) openMenu(); }, 1200);
   }
 

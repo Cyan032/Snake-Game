@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#4a752c">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Flappy Bird – Arcadia</title>
-<script src="/arcadia.js?v=8"></script>
+<script src="/arcadia.js?v=9"></script>
 <link rel="icon" type="image/png" sizes="64x64" href="/icons/favicon-64.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
 <link rel="manifest" href="/manifest.webmanifest">
@@ -58,6 +58,8 @@
   .btn { flex: 1; border: 0; border-radius: 14px; padding: 13px 20px; font-size: 18px; font-weight: 600; cursor: pointer; background: var(--soft-2); color: var(--ink); }
   .btn.primary { background: var(--blue); color: #fff; box-shadow: 0 4px 0 var(--blue-dark); }
   .btn.primary:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--blue-dark); }
+  .modeinfo { margin: 6px 4px 0; font-size: 13px; color: var(--muted); line-height: 1.45; }
+  .seg button:disabled { opacity: .45; cursor: default; }
 </style>
 </head>
 <body>
@@ -80,6 +82,7 @@
     <a class="home" href="/">‹ Arcadia</a>
     <h1>Flappy Bird</h1>
     <p class="result" id="result"></p>
+    <div class="row"><label>Modus</label><div class="seg" data-s="mode"></div><p class="modeinfo" id="modeinfo"></p></div>
     <div class="row"><label>Tempo</label><div class="seg" data-s="speed"></div></div>
     <div class="row"><label>Lücke</label><div class="seg" data-s="gap"></div></div>
     <div class="row"><label>Abstand der Säulen</label><div class="seg" data-s="spacing"></div></div>
@@ -102,6 +105,7 @@
 
   // ---------- Einstellungen ----------
   const OPTS = {
+    mode: { label: ['Rekord-Modus', 'Frei spielen'], val: [1, 0], def: 0 },
     speed:   { label: ['Langsam', 'Normal', 'Schnell', 'Turbo'], val: [110, 150, 195, 245], def: 1 },
     gap:     { label: ['Klein', 'Mittel', 'Groß', 'Riesig'], val: [3.0, 3.6, 4.3, 5.2], def: 1 },
     spacing: { label: ['Eng', 'Normal', 'Weit'], val: [4.2, 5.4, 6.8], def: 1 },
@@ -120,19 +124,26 @@
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem('flug.settings') || '{}'); } catch (e) {}
   for (const k in OPTS) set[k] = Number.isInteger(saved[k]) && saved[k] < OPTS[k].val.length ? saved[k] : OPTS[k].def;
-  const v = (k) => OPTS[k].val[set[k]];
+  // Rekord-Modus: feste Standard-Einstellungen, nur dann zählen Rekorde
+  const REC = { speed: 1, gap: 1, spacing: 1, gravity: 1, ramp: 1 };
+  const rec = () => set.mode === 0;
+  const idx = (k) => (rec() && k in REC ? REC[k] : set[k]);
+  const v = (k) => OPTS[k].val[idx(k)];
   const save = () => { try { localStorage.setItem('flug.settings', JSON.stringify(set)); } catch (e) {} };
-  const bestKey = () => 'flug.best.' + [set.speed, set.gap, set.spacing, set.gravity, set.ramp].join('');
-  const getBest = () => { try { return +localStorage.getItem(bestKey()) || 0; } catch (e) { return 0; } };
+  const bestKey = () => 'flug.rec';
+  const getBest = () => { if (!rec()) return 0; try { return +localStorage.getItem(bestKey()) || 0; } catch (e) { return 0; } };
 
   function buildMenu() {
+    const mi = document.getElementById('modeinfo');
+    if (mi) mi.textContent = rec() ? 'Feste Einstellungen, nur hier zählen Rekorde: Tempo Normal · Lücke Mittel · Abstand Normal · wird schwerer.' : 'Eigene Einstellungen, hier werden keine Rekorde gespeichert.';
     document.querySelectorAll('.seg[data-s]').forEach((seg) => {
       const k = seg.dataset.s; seg.innerHTML = '';
       OPTS[k].label.forEach((l, i) => {
         const b = document.createElement('button'); b.type = 'button';
         if (k === 'color') { b.innerHTML = `<i style="background:${OPTS.color.val[i]}"></i>`; b.title = 'Farbe ' + (i + 1); }
         else b.textContent = l;
-        b.className = i === set[k] ? 'on' : '';
+        b.className = i === idx(k) ? 'on' : '';
+        if (rec() && k in REC) b.disabled = true;
         b.onclick = () => { set[k] = i; save(); buildMenu(); applyWorld(); newRound(); draw(); };
         seg.appendChild(b);
       });
@@ -233,7 +244,7 @@
   function die() {
     window.Arcadia && Arcadia.xp(Math.min(120, 5 + score * 2), 'Flappy Bird');
     state = 'over'; deadT = 0; shake = 0.35; beep(160, 0.35, 'sawtooth', 0.07);
-    if (score > best) { best = score; try { localStorage.setItem(bestKey(), best); } catch (e) {} $('best').textContent = best; }
+    if (score > best) { best = score; try { if (rec()) localStorage.setItem(bestKey(), best); } catch (e) {} $('best').textContent = best; }
     setTimeout(() => { if (state === 'over' && !menuOpen()) openMenu(); }, 750);
   }
 

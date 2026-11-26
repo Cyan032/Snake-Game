@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#4a752c">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Only Up – Arcadia</title>
-<script src="/arcadia.js?v=8"></script>
+<script src="/arcadia.js?v=9"></script>
 <link rel="icon" type="image/png" sizes="64x64" href="/icons/favicon-64.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
 <link rel="manifest" href="/manifest.webmanifest">
@@ -59,6 +59,8 @@
   .btn.primary { background: var(--blue); color: #fff; box-shadow: 0 4px 0 var(--blue-dark); }
   .btn.primary:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--blue-dark); }
   #board { touch-action: none; }
+  .modeinfo { margin: 6px 4px 0; font-size: 13px; color: var(--muted); line-height: 1.45; }
+  .seg button:disabled { opacity: .45; cursor: default; }
   .keys { font-size: 13px; color: var(--muted); text-align: center; margin: 12px 0 0; line-height: 1.6; }
 </style>
 </head>
@@ -79,6 +81,7 @@
     <a class="home" href="/">‹ Arcadia</a>
     <h1>Only Up</h1>
     <p class="result" id="result"></p>
+    <div class="row"><label>Modus</label><div class="seg" data-s="mode"></div><p class="modeinfo" id="modeinfo"></p></div>
     <div class="row"><label>Plattform-Abstand</label><div class="seg" data-s="gap"></div></div>
     <div class="row"><label>Fiese Plattformen</label><div class="seg" data-s="tricky"></div></div>
     <div class="row"><label>Steuerung am Handy</label><div class="seg" data-s="ctrl"></div></div>
@@ -101,6 +104,7 @@
 
   // ---------- Einstellungen ----------
   const OPTS = {
+    mode: { label: ['Rekord-Modus', 'Frei spielen'], val: [1, 0], def: 0 },
     gap:    { label: ['Eng', 'Normal', 'Weit'], val: [0.8, 1, 1.18], def: 1 },
     tricky: { label: ['Wenig', 'Normal', 'Viel'], val: [0.5, 1, 1.6], def: 1 },
     ctrl:   { label: ['Tippen', 'Neigen'], val: [0, 1], def: 0 },
@@ -117,22 +121,29 @@
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem('up.settings') || '{}'); } catch (e) {}
   for (const k in OPTS) set[k] = Number.isInteger(saved[k]) && saved[k] < OPTS[k].val.length ? saved[k] : OPTS[k].def;
-  const v = (k) => OPTS[k].val[set[k]];
+  // Rekord-Modus: feste Standard-Einstellungen, nur dann zählen Rekorde
+  const REC = { gap: 1, tricky: 1 };
+  const rec = () => set.mode === 0;
+  const idx = (k) => (rec() && k in REC ? REC[k] : set[k]);
+  const v = (k) => OPTS[k].val[idx(k)];
   const save = () => { try { localStorage.setItem('up.settings', JSON.stringify(set)); } catch (e) {} };
-  const bestKey = () => 'up.best.' + set.gap + set.tricky;
-  const getBest = () => { try { return +localStorage.getItem(bestKey()) || 0; } catch (e) { return 0; } };
+  const bestKey = () => 'up.rec';
+  const getBest = () => { if (!rec()) return 0; try { return +localStorage.getItem(bestKey()) || 0; } catch (e) { return 0; } };
 
   function buildMenu() {
+    const mi = document.getElementById('modeinfo');
+    if (mi) mi.textContent = rec() ? 'Feste Einstellungen, nur hier zählen Rekorde: Plattform-Abstand Normal · fiese Plattformen Normal.' : 'Eigene Einstellungen, hier werden keine Rekorde gespeichert.';
     document.querySelectorAll('.seg[data-s]').forEach((seg) => {
       const k = seg.dataset.s; seg.innerHTML = '';
       OPTS[k].label.forEach((l, i) => {
         const b = document.createElement('button'); b.type = 'button';
         if (k === 'color') { b.innerHTML = `<i style="background:${OPTS.color.val[i]}"></i>`; b.title = 'Farbe ' + (i + 1); }
         else b.textContent = l;
-        b.className = i === set[k] ? 'on' : '';
+        b.className = i === idx(k) ? 'on' : '';
+        if (rec() && k in REC) b.disabled = true;
         b.onclick = () => {
           set[k] = i; save(); buildMenu(); applyWorld();
-          if (k === 'gap' || k === 'tricky') { newGame(); state = 'ready'; }
+          if (k === 'gap' || k === 'tricky' || k === 'mode') { newGame(); state = 'ready'; }
           if (k === 'ctrl' && i === 1) askTilt();
         };
         seg.appendChild(b);
@@ -234,7 +245,7 @@
   function gameOver() {
     window.Arcadia && Arcadia.xp(Math.min(120, 5 + Math.floor(score / 8)), 'Only Up');
     state = 'over'; overT = 0; beep(200, 0.45, 'sawtooth', 0.06);
-    if (score > getBest()) { try { localStorage.setItem(bestKey(), score); } catch (e) {} }
+    if (score > getBest()) { try { if (rec()) localStorage.setItem(bestKey(), score); } catch (e) {} }
     setTimeout(() => { if (state === 'over' && !menuOpen()) openMenu(); }, 900);
   }
 

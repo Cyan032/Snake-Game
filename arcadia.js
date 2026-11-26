@@ -9,45 +9,21 @@
   const SNAKE_MODES = [['classic', 'Klassisch'], ['wrap', 'Ohne Wände'], ['walls', 'Hindernisse'], ['portal', 'Portale'], ['poison', 'Gift'], ['turbo', 'Turbo'],
     ['time', 'Zeitrennen'], ['mirror', 'Spiegel'], ['dark', 'Dunkel'], ['flee', 'Fluchtäpfel'], ['hunger', 'Hunger'], ['zone', 'Zone'], ['chaos', 'Chaos']];
 
-  // Wann ein Ergebnis als fair gilt (Ziffern = Stufen der Einstellungen in der Reihenfolge des Speicher-Schlüssels)
-  const FAIR = {
-    flug: { prefix: 'flug.best.', n: 5, ok: ([sp, gap, spc, gr, ramp]) => sp >= 1 && gap <= 1 && spc <= 1 && gr >= 1 && ramp === 1 },
-    dino: { prefix: 'dino.best.', n: 5, ok: ([sp, ramp, den, jump, bees]) => sp >= 1 && ramp >= 1 && den >= 1 && jump <= 1 && bees === 1 },
-    block: { prefix: 'block.best.', n: 3, ok: ([, ramp, size]) => ramp === 1 && size === 1 },
-    fruit: { prefix: 'fruit.best.', n: 2, ok: ([box]) => box >= 1 },
-    up: { prefix: 'up.best.', n: 2, ok: ([gap, tr]) => gap >= 1 && tr >= 1 },
-    stack: { prefix: 'stack.best.', n: 3, ok: ([sp, ramp, tol]) => sp >= 1 && ramp === 1 && tol <= 1 },
-  };
-  function bestCombo(cfg) {
-    let best = 0;
-    try {
-      for (let i = 0; i < LS.length; i++) {
-        const k = LS.key(i); if (!k || !k.startsWith(cfg.prefix)) continue;
-        const d = k.slice(cfg.prefix.length).split('').map(Number);
-        if (d.length !== cfg.n || d.some(isNaN) || !cfg.ok(d)) continue;
-        best = Math.max(best, +LS.getItem(k) || 0);
-      }
-    } catch (e) {}
-    return best;
-  }
+  // Rekorde entstehen nur im Rekord-Modus der Spiele (feste Einstellungen) und liegen unter '<spiel>.rec'
   function parkStars() {
     const park = get('snake.park', {}); let s = 0;
     for (const k in park) s += (park[k] && park[k].s) || 0;
     return s;
   }
-  // Alle fairen Bestwerte dieses Geräts als { liste: wert }
   function localBest() {
     const out = {};
-    for (const [id] of SNAKE_MODES) { const v = get('snake.fair.' + id, 0); if (v > 0) out['snake-' + id] = v; }
+    for (const [id] of SNAKE_MODES) { const v = get('snake.rec.' + id, 0); if (v > 0) out['snake-' + id] = v; }
     const ps = parkStars(); if (ps) out['snake-park'] = ps;
-    for (const g in FAIR) { const v = bestCombo(FAIR[g]); if (v) out[g] = v; }
-    const sol = get('sol.stats', {});
-    if (sol.best1) out.sol1 = Math.round(sol.best1 * 10) / 10;
-    if (sol.best3) out.sol3 = Math.round(sol.best3 * 10) / 10;
-    const vw = (get('vier.stats', {}).k4 || {}).w; if (vw) out.vier = vw;
+    for (const g of ['flug', 'dino', 'block', 'fruit', 'stack', 'up', 'vier', 'ttt']) { const v = +get(g + '.rec', 0); if (v > 0) out[g] = v; }
+    const sol = +get('sol.rec', 0); if (sol > 0) out.sol = Math.round(sol * 10) / 10;
     return out;
   }
-  const LOW = { sol1: true, sol3: true };
+  const LOW = { sol: true };
 
   const ADJ = ['Grüner', 'Flinker', 'Schlauer', 'Wilder', 'Leiser', 'Mutiger', 'Neon', 'Blauer', 'Goldener', 'Schneller', 'Pinker', 'Cooler'];
   const ANI = ['Gecko', 'Fuchs', 'Falke', 'Otter', 'Luchs', 'Panda', 'Igel', 'Rabe', 'Dachs', 'Hase', 'Wal', 'Koala'];
@@ -167,7 +143,7 @@
   // ---------- Cloud-Spielstand ----------
   // Fortschritt, Rekorde und Statistiken aller Spiele werden mit dem Konto gespeichert und zusammengeführt.
   // Einstellungen (Farbe, Welt, Steuerung …) bleiben bewusst pro Gerät.
-  const SAVE_RX = /^(snake\.(best|fair)\.[a-z]+$|snake\.park$|(flug|dino|block|fruit|stack|up)\.best\.\d+$|(sol|vier|ttt)\.stats$)/;
+  const SAVE_RX = /^(snake\.rec\.[a-z]+$|snake\.park$|(flug|dino|block|fruit|stack|up|vier|ttt|sol)\.rec$|(sol|vier|ttt)\.stats$)/;
   const origSet = Storage.prototype.setItem;
   function collect() {
     const out = {};
@@ -191,6 +167,7 @@
       for (const x in b) { const p = o[x] || {}, q = b[x]; o[x] = { w: Math.max(p.w || 0, q.w || 0), l: Math.max(p.l || 0, q.l || 0), d: Math.max(p.d || 0, q.d || 0) }; }
       return o;
     }
+    if (k === 'sol.rec') return Math.min(+a || Infinity, +b || Infinity) === Infinity ? 0 : Math.min(+a || Infinity, +b || Infinity);
     return Math.max(+a || 0, +b || 0);
   }
   function apply(data) {
@@ -218,7 +195,7 @@
 
   // Wenn ein Spiel etwas speichert: kurz danach Rekorde hochladen und den Spielstand sichern
   let timer = 0, cloudTimer = 0;
-  const RX = /^(snake\.fair\.|snake\.park$|flug\.best\.|dino\.best\.|block\.best\.|fruit\.best\.|stack\.best\.|up\.best\.|sol\.stats$|vier\.stats$)/;
+  const RX = /^(snake\.rec\.|snake\.park$|(flug|dino|block|fruit|stack|up|vier|ttt|sol)\.rec$)/;
   const plan = () => { clearTimeout(timer); timer = setTimeout(() => A.sync().catch(() => {}), 1500); };
   const planCloud = () => { clearTimeout(cloudTimer); cloudTimer = setTimeout(() => A.cloud().catch(() => {}), 4000); };
   try {
@@ -277,7 +254,7 @@
         <li>Mit Konto landen deine Rekorde in der <b>weltweiten Bestenliste</b>.</li>
         <li>Kein Passwort, keine E-Mail: dein <b>12-stelliger Code</b> ist dein Schlüssel.</li>
         <li>Mit dem Code meldest du dich auf jedem Gerät an, z.&nbsp;B. iPad und PC.</li>
-        <li>Es zählen nur faire Rekorde, also nicht mit erleichterten Einstellungen.</li></ul>`;
+        <li>Rekorde zählen nur im <b>Rekord-Modus</b> der Spiele, mit festen Einstellungen für alle.</li></ul>`;
     function render(t) {
       g.innerHTML = `<div class="box"><h2>Willkommen bei Arcadia</h2>
         <div class="tabs"><button data-t="reg" class="${t === 'reg' ? 'on' : ''}">Registrieren</button><button data-t="log" class="${t === 'log' ? 'on' : ''}">Anmelden</button></div>

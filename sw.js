@@ -2,7 +2,7 @@
    Seiten (HTML): erst Netz, bei Offline aus dem Speicher → Updates kommen sofort an.
    Dateien (JS, CSS, Bilder, Schriften): sofort aus dem Speicher, im Hintergrund aktualisiert.
    Die Online-Bestenliste (/api) wird nie gespeichert. */
-const CACHE = 'arcadia-v1';
+const CACHE = 'arcadia-v3';
 const PAGES = ['/', '/snake/', '/flug/', '/dino/', '/block/', '/solitaire/', '/vier/', '/ttt/', '/fruit/', '/stack/', '/up/', '/rekorde/'];
 const FILES = ['/arcadia.js', '/scene.js', '/vendor/three.min.js', '/snake/game.js', '/snake/levels.js', '/snake/style.css',
   '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/apple-touch-icon.png', '/icons/favicon-64.png'];
@@ -28,10 +28,11 @@ self.addEventListener('fetch', (e) => {
     return;
   }
   // Dateien: sofort aus dem Speicher, dann im Hintergrund frisch holen
-  e.respondWith(caches.open(CACHE).then((c) => c.match(isFont ? req : stripSearch(url)).then((hit) => {
-    const net = fetch(req).then((res) => { if (res.ok || res.type === 'opaque') c.put(isFont ? req : stripSearch(url), res.clone()); return res; }).catch(() => hit);
+  // Schlüssel mit ?v=…: eine neue Version ist ein neuer Eintrag und kommt sofort aus dem Netz
+  e.respondWith(caches.open(CACHE).then((c) => c.match(req).then((hit) => {
+    const net = fetch(req).then((res) => { if (res.ok || res.type === 'opaque') c.put(req, res.clone()); return res; }).catch(() => hit || c.match(stripSearch(url)));
     return hit || net;
   })));
 });
-// ?v=… bei Dateien ignorieren, damit der Speicher nicht vollläuft
+// Adresse ohne ?v=… (für Seiten und als Notlösung offline)
 function stripSearch(url) { return url.origin + url.pathname; }

@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#4a752c">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Fruit Drop – Arcadia</title>
-<script src="/arcadia.js?v=8"></script>
+<script src="/arcadia.js?v=9"></script>
 <link rel="icon" type="image/png" sizes="64x64" href="/icons/favicon-64.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
 <link rel="manifest" href="/manifest.webmanifest">
@@ -59,6 +59,8 @@
   .btn.primary { background: var(--blue); color: #fff; box-shadow: 0 4px 0 var(--blue-dark); }
   .btn.primary:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--blue-dark); }
   #board { touch-action: none; cursor: none; }
+  .modeinfo { margin: 6px 4px 0; font-size: 13px; color: var(--muted); line-height: 1.45; }
+  .seg button:disabled { opacity: .45; cursor: default; }
   .keys { font-size: 13px; color: var(--muted); text-align: center; margin: 12px 0 0; line-height: 1.6; }
 </style>
 </head>
@@ -79,6 +81,7 @@
     <a class="home" href="/">‹ Arcadia</a>
     <h1>Fruit Drop</h1>
     <p class="result" id="result"></p>
+    <div class="row"><label>Modus</label><div class="seg" data-s="mode"></div><p class="modeinfo" id="modeinfo"></p></div>
     <div class="row"><label>Kiste</label><div class="seg" data-s="box"></div></div>
     <div class="row"><label>Schwerkraft</label><div class="seg" data-s="grav"></div></div>
     <div class="row"><label>Nächste Frucht zeigen</label><div class="seg" data-s="next"></div></div>
@@ -99,6 +102,7 @@
 
   // ---------- Einstellungen ----------
   const OPTS = {
+    mode: { label: ['Rekord-Modus', 'Frei spielen'], val: [1, 0], def: 0 },
     box:   { label: ['Breit', 'Normal', 'Schmal'], val: [450, 380, 330], def: 1 },
     grav:  { label: ['Leicht', 'Normal', 'Stark'], val: [900, 1300, 1800], def: 1 },
     next:  { label: ['Aus', 'An'], val: [0, 1], def: 1 },
@@ -114,19 +118,26 @@
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem('fruit.settings') || '{}'); } catch (e) {}
   for (const k in OPTS) set[k] = Number.isInteger(saved[k]) && saved[k] < OPTS[k].val.length ? saved[k] : OPTS[k].def;
-  const v = (k) => OPTS[k].val[set[k]];
+  // Rekord-Modus: feste Standard-Einstellungen, nur dann zählen Rekorde
+  const REC = { box: 1, grav: 1, next: 1 };
+  const rec = () => set.mode === 0;
+  const idx = (k) => (rec() && k in REC ? REC[k] : set[k]);
+  const v = (k) => OPTS[k].val[idx(k)];
   const save = () => { try { localStorage.setItem('fruit.settings', JSON.stringify(set)); } catch (e) {} };
-  const bestKey = () => 'fruit.best.' + set.box + set.grav;
-  const getBest = () => { try { return +localStorage.getItem(bestKey()) || 0; } catch (e) { return 0; } };
+  const bestKey = () => 'fruit.rec';
+  const getBest = () => { if (!rec()) return 0; try { return +localStorage.getItem(bestKey()) || 0; } catch (e) { return 0; } };
 
   function buildMenu() {
+    const mi = document.getElementById('modeinfo');
+    if (mi) mi.textContent = rec() ? 'Feste Einstellungen, nur hier zählen Rekorde: Kiste Normal · Schwerkraft Normal · nächste Frucht sichtbar.' : 'Eigene Einstellungen, hier werden keine Rekorde gespeichert.';
     document.querySelectorAll('.seg[data-s]').forEach((seg) => {
       const k = seg.dataset.s; seg.innerHTML = '';
       OPTS[k].label.forEach((l, i) => {
         const b = document.createElement('button'); b.type = 'button'; b.textContent = l;
-        b.className = i === set[k] ? 'on' : '';
+        b.className = i === idx(k) ? 'on' : '';
+        if (rec() && k in REC) b.disabled = true;
         b.onclick = () => {
-          const reset = (k === 'box' || k === 'grav') && set[k] !== i;
+          const reset = (k === 'box' || k === 'grav' || k === 'mode') && set[k] !== i;
           set[k] = i; save(); buildMenu(); applyWorld();
           if (reset) { newGame(); resize(); }
         };
@@ -249,7 +260,7 @@
   function gameOver() {
     window.Arcadia && Arcadia.xp(Math.min(120, 5 + Math.floor(score / 15)), 'Fruit Drop');
     state = 'over'; over = 0; beep(160, 0.5, 'sawtooth', 0.06);
-    if (score >= getBest() && score > 0) { try { localStorage.setItem(bestKey(), score); } catch (e) {} }
+    if (score >= getBest() && score > 0) { try { if (rec()) localStorage.setItem(bestKey(), score); } catch (e) {} }
     setTimeout(() => { if (state === 'over' && !menuOpen()) openMenu(); }, 1300);
   }
 

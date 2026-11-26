@@ -154,6 +154,10 @@ body.touch #dpad {
 .summary b { color: var(--ink); font-weight: 600; }
 .row { display: grid; grid-template-columns: 96px 1fr; align-items: center; gap: 10px; margin-top: 10px; }
 .row .section { margin: 0; }
+.rec-lock.locked { opacity: .45; pointer-events: none; }
+.recrow { margin: 4px 0 10px; }
+.recrow .seg button { font-size: 15px; }
+.recinfo { margin: 6px 4px 0; font-size: 13px; color: var(--muted); line-height: 1.45; }
 .seg { display: flex; gap: 2px; padding: 3px; border-radius: 13px; background: var(--soft); }
 .seg button { flex: 1; border: 0; background: transparent; padding: 8px 4px; border-radius: 10px; font-size: 15px; font-weight: 600; color: var(--muted); cursor: pointer; white-space: nowrap; }
 .seg button.on { background: #fff; color: var(--ink); box-shadow: 0 1px 4px rgba(0,0,0,.15); }

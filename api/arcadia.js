@@ -12,19 +12,21 @@ const BOARDS = {
   flug: { max: 5000 },
   dino: { max: 500000 },
   block: { max: 50000000 },
-  vier: { max: 100000 },
   fruit: { max: 200000 },
   stack: { max: 20000 },
   up: { max: 500000 },
-  sol1: { low: true, min: 30, max: 36000 },
-  sol3: { low: true, min: 30, max: 36000 },
+  vier: { max: 1000 },
+  ttt: { max: 1000 },
+  sol: { low: true, min: 30, max: 36000 },
 };
+// Bestenlisten der Version 2: nur noch Rekorde aus dem Rekord-Modus (die alten Listen bleiben unbenutzt liegen)
+const LB = 'lb2:';
 for (const m of SNAKE_MODES) BOARDS['snake-' + m] = { max: 5000 };
 
 const BAD = ['arsch', 'fick', 'fuck', 'hure', 'nazi', 'hitler', 'nigg', 'neger', 'schwuchtel', 'fotze', 'wichs', 'bitch', 'cunt', 'dick', 'penis', 'vagina', 'sex', 'porn', 'kanake', 'spast', 'missgeburt', 'shit', 'scheiss', 'scheiß', 'hurensohn', 'whore', 'slut', 'faggot', 'retard', 'kkk', 'heil'];
 
 // Cloud-Spielstand: erlaubte Schlüssel und Zusammenführen (es gewinnt immer das Bessere)
-const SAVE_RX = /^(snake\.(best|fair)\.[a-z]+$|snake\.park$|(flug|dino|block|fruit|stack|up)\.best\.\d+$|(sol|vier|ttt)\.stats$)/;
+const SAVE_RX = /^(snake\.rec\.[a-z]+$|snake\.park$|(flug|dino|block|fruit|stack|up|vier|ttt|sol)\.rec$|(sol|vier|ttt)\.stats$)/;
 const num = (x) => (Number.isFinite(+x) ? Math.max(0, +x) : 0);
 function mergeVal(k, a, b) {
   if (a === undefined || a === null) return clean(k, b); if (b === undefined || b === null) return clean(k, a);
@@ -43,6 +45,7 @@ function mergeVal(k, a, b) {
     for (const x in b) { const p = o[x] || { w: 0, l: 0, d: 0 }, q = b[x]; o[x] = { w: Math.max(p.w, q.w), l: Math.max(p.l, q.l), d: Math.max(p.d, q.d) }; }
     return o;
   }
+  if (k === 'sol.rec') return a && b ? Math.min(a, b) : a || b;
   return Math.max(a, b);
 }
 // Nur erwartete Formen übernehmen, damit niemand Müll speichern kann
@@ -103,7 +106,7 @@ module.exports = async (req, res) => {
       const q = new URL(req.url, 'http://x').searchParams;
       const boards = String(q.get('boards') || '').split(',').filter((b) => BOARDS[b]).slice(0, 20);
       if (!boards.length) return send(400, { error: 'Unbekannte Liste.' });
-      const lists = await redis(boards.map((b) => BOARDS[b].low ? ['ZRANGE', 'lb:' + b, 0, 9, 'WITHSCORES'] : ['ZRANGE', 'lb:' + b, 0, 9, 'REV', 'WITHSCORES']));
+      const lists = await redis(boards.map((b) => BOARDS[b].low ? ['ZRANGE', LB + b, 0, 9, 'WITHSCORES'] : ['ZRANGE', LB + b, 0, 9, 'REV', 'WITHSCORES']));
       const uids = [...new Set(lists.flatMap((l) => (l || []).filter((_, i) => i % 2 === 0)))];
       const [names, lvs] = uids.length ? await redis([['HMGET', 'names', ...uids], ['HMGET', 'lv', ...uids]]) : [[], []];
       const nameOf = Object.fromEntries(uids.map((u, i) => [u, names[i] || '???']));
@@ -145,7 +148,7 @@ module.exports = async (req, res) => {
 
     if (action === 'login') {
       const keys = Object.keys(BOARDS);
-      const scores = await redis([...keys.map((k) => ['ZSCORE', 'lb:' + k, uid]), ['HGET', 'u:' + uid, 'xp']]);
+      const scores = await redis([...keys.map((k) => ['ZSCORE', LB + k, uid]), ['HGET', 'u:' + uid, 'xp']]);
       const mine = {}; keys.forEach((k, i) => { if (scores[i] !== null) mine[k] = +scores[i]; });
       return send(200, { name, id: uid.slice(0, 6), scores: mine, xp: +scores[keys.length] || 0 });
     }
@@ -181,7 +184,7 @@ module.exports = async (req, res) => {
       for (const [board, raw] of Object.entries(s).slice(0, 25)) {
         const cfg = BOARDS[board], v = Number(raw);
         if (!cfg || !Number.isFinite(v) || v <= 0 || v > cfg.max || (cfg.min && v < cfg.min)) continue;
-        cmds.push(['ZADD', 'lb:' + board, cfg.low ? 'LT' : 'GT', Math.round(v * 10) / 10, uid]); done.push(board);
+        cmds.push(['ZADD', LB + board, cfg.low ? 'LT' : 'GT', Math.round(v * 10) / 10, uid]); done.push(board);
       }
       if (cmds.length) await redis(cmds);
       return send(200, { ok: done });

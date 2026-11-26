@@ -15,7 +15,7 @@ Eine Sammlung kleiner Browserspiele. Die Startseite (`index.html`) zeigt alle Sp
 | Stack | `stack/` |
 | Only Up | `up/` |
 
-Die Seite `rekorde/` zeigt die Rekorde aller Spiele. Als Rekord zählt nur, was mit fairen Einstellungen geschafft wurde.
+Die Seite `rekorde/` zeigt die Rekorde aller Spiele. Jedes Spiel hat einen **Rekord-Modus** mit festen Standard-Einstellungen; nur dort werden Rekorde gespeichert (`<spiel>.rec`). Im Modus „Frei spielen“ lässt sich alles einstellen, dafür gibt es keine Rekorde. Bei Vier in Reihe und Tic Tac Toe zählt die längste Siegesserie, bei Solitaire die Bestzeit.
 
 Konten und die weltweite Bestenliste laufen über `api/arcadia.js` (Vercel-Funktion) mit einer Upstash-Redis-Datenbank. Ein Konto ist ein 12-stelliger Code, in der Datenbank liegt nur ein Hash davon. `arcadia.js` wird auf allen Seiten geladen, zeigt beim ersten Besuch Registrieren/Anmelden und lädt neue faire Rekorde automatisch hoch.
 

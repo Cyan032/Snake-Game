@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#4a752c">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Dino Runner – Arcadia</title>
-<script src="/arcadia.js?v=8"></script>
+<script src="/arcadia.js?v=9"></script>
 <link rel="icon" type="image/png" sizes="64x64" href="/icons/favicon-64.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
 <link rel="manifest" href="/manifest.webmanifest">
@@ -66,6 +66,8 @@
   .btn { flex: 1; border: 0; border-radius: 14px; padding: 13px 20px; font-size: 18px; font-weight: 600; cursor: pointer; background: var(--soft-2); color: var(--ink); }
   .btn.primary { background: var(--blue); color: #fff; box-shadow: 0 4px 0 var(--blue-dark); }
   .btn.primary:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--blue-dark); }
+  .modeinfo { margin: 6px 4px 0; font-size: 13px; color: var(--muted); line-height: 1.45; }
+  .seg button:disabled { opacity: .45; cursor: default; }
 </style>
 </head>
 <body>
@@ -88,6 +90,7 @@
     <a class="home" href="/">‹ Arcadia</a>
     <h1>Dino Runner</h1>
     <p class="result" id="result"></p>
+    <div class="row"><label>Modus</label><div class="seg" data-s="mode"></div><p class="modeinfo" id="modeinfo"></p></div>
     <div class="row"><label>Tempo</label><div class="seg" data-s="speed"></div></div>
     <div class="row"><label>Wird schneller</label><div class="seg" data-s="ramp"></div></div>
     <div class="row"><label>Hindernisse</label><div class="seg" data-s="density"></div></div>
@@ -115,6 +118,7 @@
 
   // ---------- Einstellungen ----------
   const OPTS = {
+    mode: { label: ['Rekord-Modus', 'Frei spielen'], val: [1, 0], def: 0 },
     speed:   { label: ['Langsam', 'Normal', 'Schnell', 'Turbo'], val: [6, 8, 10.5, 13], def: 1 },
     ramp:    { label: ['Aus', 'Normal', 'Stark'], val: [0, 0.08, 0.16], def: 1 },
     density: { label: ['Wenig', 'Normal', 'Viel'], val: [1.35, 1, 0.75], def: 1 },
@@ -138,19 +142,26 @@
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem('dino.settings') || '{}'); } catch (e) {}
   for (const k in OPTS) set[k] = Number.isInteger(saved[k]) && saved[k] < OPTS[k].val.length ? saved[k] : OPTS[k].def;
-  const v = (k) => OPTS[k].val[set[k]];
+  // Rekord-Modus: feste Standard-Einstellungen, nur dann zählen Rekorde
+  const REC = { speed: 1, ramp: 1, density: 1, jump: 1, bees: 1 };
+  const rec = () => set.mode === 0;
+  const idx = (k) => (rec() && k in REC ? REC[k] : set[k]);
+  const v = (k) => OPTS[k].val[idx(k)];
   const save = () => { try { localStorage.setItem('dino.settings', JSON.stringify(set)); } catch (e) {} };
-  const bestKey = () => 'dino.best.' + [set.speed, set.ramp, set.density, set.jump, set.bees].join('');
-  const getBest = () => { try { return +localStorage.getItem(bestKey()) || 0; } catch (e) { return 0; } };
+  const bestKey = () => 'dino.rec';
+  const getBest = () => { if (!rec()) return 0; try { return +localStorage.getItem(bestKey()) || 0; } catch (e) { return 0; } };
 
   function buildMenu() {
+    const mi = document.getElementById('modeinfo');
+    if (mi) mi.textContent = rec() ? 'Feste Einstellungen, nur hier zählen Rekorde: Tempo Normal · wird schneller · Hindernisse Normal · mit Bienen.' : 'Eigene Einstellungen, hier werden keine Rekorde gespeichert.';
     document.querySelectorAll('.seg[data-s]').forEach((seg) => {
       const k = seg.dataset.s; seg.innerHTML = '';
       OPTS[k].label.forEach((l, i) => {
         const b = document.createElement('button'); b.type = 'button';
         if (k === 'color') { b.innerHTML = `<i style="background:${OPTS.color.val[i]}"></i>`; b.title = 'Farbe ' + (i + 1); }
         else b.textContent = l;
-        b.className = i === set[k] ? 'on' : '';
+        b.className = i === idx(k) ? 'on' : '';
+        if (rec() && k in REC) b.disabled = true;
         b.onclick = () => { set[k] = i; save(); buildMenu(); applyWorld(); newRound(); draw(); };
         seg.appendChild(b);
       });
@@ -288,7 +299,7 @@
   function die() {
     window.Arcadia && Arcadia.xp(Math.min(120, 5 + Math.floor(score / 15)), 'Dino Runner');
     state = 'over'; deadT = 0; shake = 0.35; beep(200, 0.35, 'sawtooth', 0.07, 0.4);
-    if (score > best) { best = score; try { localStorage.setItem(bestKey(), best); } catch (e) {} $('best').textContent = best; }
+    if (score > best) { best = score; try { if (rec()) localStorage.setItem(bestKey(), best); } catch (e) {} $('best').textContent = best; }
     setTimeout(() => { if (state === 'over' && !menuOpen()) openMenu(); }, 800);
   }
 

@@ -134,17 +134,21 @@
 
   const DEFAULTS = {
     mode: 'classic', speed: 'normal', size: 'm', apples: 1, bonus: 'on', theme: 'meadow', map: 'open', ai: 'normal',
-    color: 'blue', pattern: 'plain', keydebug: false, tier: 0, level: 0, tab: 'modes',
+    color: 'blue', pattern: 'plain', keydebug: false, recmode: true, tier: 0, level: 0, tab: 'modes',
   };
   const settings = Object.assign({}, DEFAULTS, store.get('settings', {}));
   const VALID = {
     mode: MODES.map((m) => m.id), speed: Object.keys(SPEEDS), size: Object.keys(SIZES), apples: APPLE_COUNTS, bonus: ['on', 'off'],
     theme: Object.keys(THEMES), map: Object.keys(MAPS), ai: Object.keys(AI_LEVELS), color: Object.keys(COLORS),
-    pattern: ['plain', 'stripes', 'dots', 'rainbow'], keydebug: [true, false], tier: [0, 1, 2, 3], tab: ['modes', 'parkour', 'settings'],
+    pattern: ['plain', 'stripes', 'dots', 'rainbow'], keydebug: [true, false], recmode: [true, false], tier: [0, 1, 2, 3], tab: ['modes', 'parkour', 'settings'],
   };
   for (const k in VALID) if (!VALID[k].includes(settings[k])) settings[k] = DEFAULTS[k];
   if (!(settings.level >= 0 && settings.level < LEVELS.length)) settings.level = 0;
   const saveSettings = () => store.set('settings', settings);
+  // Rekord-Modus: feste Standard-Einstellungen, nur dann zählen Rekorde
+  const REC_SET = { speed: 'normal', size: 'm', apples: 1, bonus: 'on', map: 'open' };
+  const eff = (k) => (settings.recmode ? REC_SET[k] : settings[k]);
+  const recKey = (m) => (settings.recmode && !m.versus && !m.peaceful ? 'rec.' + m.id : null);
 
   /* ---------- Sound (Web Audio, ohne Dateien) ---------- */
   const Sound = {
@@ -383,11 +387,11 @@
 
   function newGame() {
     const mode = MODES.find((m) => m.id === settings.mode) || MODES[0];
-    const [cols, rows] = SIZES[settings.size];
-    G = baseGame(mode, cols, rows, SPEEDS[settings.speed]);
+    const [cols, rows] = SIZES[eff('size')];
+    G = baseGame(mode, cols, rows, SPEEDS[eff('speed')]);
     const g = G, now = performance.now();
-    g.best = g.prevBest = mode.versus ? 0 : store.get('best.' + mode.id, 0);
-    for (const c of layoutWalls(settings.map, cols, rows)) addWall(c.x, c.y);
+    g.best = g.prevBest = recKey(mode) ? store.get(recKey(mode), 0) : 0;
+    for (const c of layoutWalls(eff('map'), cols, rows)) addWall(c.x, c.y);
     keepLargestRegion();
     placeSnakes(now);
     // erster Apfel in Blickrichtung, wie beim Original
@@ -398,7 +402,7 @@
       g.apples.push({ x: fx, y: fy, born: now, kind: 'apple' });
     }
     if (mode.portals) placePortals(now);
-    const want = center ? Math.max(2, settings.apples) : settings.apples;
+    const want = center ? Math.max(2, eff('apples')) : eff('apples');
     while (g.apples.length < want && spawn('apples'));
     if (mode.poison) refreshPoison(0);
     if (mode.zone) g.zone = { ring: 0, next: ZONE_MS, warned: 0 };
@@ -822,12 +826,10 @@
     g.floaters.push({ x: apple.x + 0.5, y: apple.y - 0.1, text: '+' + pts, born: now + delay, life: 750, color: m.versus ? s.color : gold ? '#ffe066' : '#ffffff' });
     if (gold) Sound.gold(); else Sound.eat();
     const total = scoreOf();
-    if (!m.versus && total > g.best) { g.best = total; store.set('best.' + m.id, g.best); }
-    // Faire Rekorde für die Rekorde-Seite: nur mit 1 Apfel und mindestens normalem Tempo, nie im Friedlich-Modus
-    if (!m.versus && !m.peaceful && settings.apples === 1 && settings.speed !== 'slow' && total > store.get('fair.' + m.id, 0)) store.set('fair.' + m.id, total);
+    if (recKey(m) && total > g.best) { g.best = total; store.set(recKey(m), g.best); }
     if (m.turbo) { g.turbo = Math.pow(0.97, total); retime(); }
     if (!gold && !apple.extra && !spawn('apples')) g.full = true;
-    if (!gold && settings.bonus === 'on' && !g.apples.some((a) => a.kind === 'gold') && Math.random() < 0.16) spawnGold();
+    if (!gold && eff('bonus') === 'on' && !g.apples.some((a) => a.kind === 'gold') && Math.random() < 0.16) spawnGold();
     if (m.stones && !gold && spawn('stones', 4)) {
       const st = g.stones[g.stones.length - 1];
       burst(st.x, st.y, ['#9e9e9e', '#d0d0d0', '#7a7a7a'], 0, now, 8);
@@ -2236,12 +2238,13 @@
     el.modes.querySelectorAll('.mode').forEach((b) => {
       const m = MODES.find((x) => x.id === b.dataset.mode);
       b.classList.toggle('on', m.id === settings.mode);
-      b.querySelector('.mb').textContent = m.duo ? 'Tastatur' : m.ai ? 'vs. Computer' : 'Rekord ' + store.get('best.' + m.id, 0);
+      b.querySelector('.mb').textContent = m.duo ? 'Tastatur' : m.ai ? 'vs. Computer' : (recKey(m) ? 'Rekord ' + store.get(recKey(m), 0) : m.peaceful ? 'ohne Rekord' : 'Frei');
     });
     const mode = MODES.find((m) => m.id === settings.mode);
     el.modeDesc.textContent = mode.desc;
     const th = THEMES[settings.theme], mp = MAPS[settings.map];
-    el.summary.innerHTML = `Welt <b>${th.name}</b> · Karte <b>${mp.name}</b> · Feld <b>${SIZE_NAMES[settings.size]}</b> · Tempo <b>${SPEED_NAMES[settings.speed]}</b> · ändern`;
+    el.summary.innerHTML = settings.recmode ? `Welt <b>${th.name}</b> · Rekord-Modus: Karte Offen · Feld Mittel · Tempo Normal · 1 Apfel` : `Welt <b>${th.name}</b> · Karte <b>${mp.name}</b> · Feld <b>${SIZE_NAMES[settings.size]}</b> · Tempo <b>${SPEED_NAMES[settings.speed]}</b> · ändern`;
+    document.querySelectorAll('.rec-lock').forEach((x) => x.classList.toggle('locked', !!settings.recmode));
     document.querySelectorAll('.seg[data-setting]').forEach((seg) => {
       seg.querySelectorAll('button').forEach((b) => b.classList.toggle('on', String(settings[seg.dataset.setting]) === b.dataset.v));
     });
@@ -2420,7 +2423,7 @@
     const b = e.target.closest('button');
     if (!b) return;
     const k = seg.dataset.setting;
-    settings[k] = k === 'apples' ? Number(b.dataset.v) : k === 'keydebug' ? b.dataset.v === 'true' : b.dataset.v;
+    settings[k] = k === 'apples' ? Number(b.dataset.v) : k === 'keydebug' || k === 'recmode' ? b.dataset.v === 'true' : b.dataset.v;
     saveSettings();
     syncMenu();
   }));
@@ -2463,7 +2466,7 @@
     if (what === 'settings' || what === 'all') { Object.assign(settings, DEFAULTS, { tab: keep }); saveSettings(); }
     if (what === 'best' || what === 'all') MODES.forEach((m) => { try { localStorage.removeItem('snake.best.' + m.id); } catch (e) {} });
     if (what === 'park' || what === 'all') { try { localStorage.removeItem('snake.park'); } catch (e) {} }
-    if (G) { G.ambient = makeAmbient(settings.theme, G.cols, G.rows); G.best = G.prevBest = store.get('best.' + G.mode.id, 0); applyTheme(); renderBackground(); updateHud(); }
+    if (G) { G.ambient = makeAmbient(settings.theme, G.cols, G.rows); G.best = G.prevBest = recKey(G.mode) ? store.get(recKey(G.mode), 0) : 0; applyTheme(); renderBackground(); updateHud(); }
     syncMenu();
     const old = b.textContent;
     b.textContent = '✓ Erledigt';

@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="Snake">
 <meta name="description" content="Snake im Browser: 16 Spielmodi, Parkour-Training mit 16 Leveln, 6 Welten, Karten und viele Einstellungen.">
 <title>Snake – Arcadia</title>
-<script src="/arcadia.js?v=8"></script>
+<script src="/arcadia.js?v=9"></script>
 <link rel="icon" type="image/png" sizes="64x64" href="/icons/favicon-64.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
 <link rel="manifest" href="/manifest.webmanifest">
@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=12">
+<link rel="stylesheet" href="style.css?v=13">
 </head>
 <body>
 <input id="keytrap" type="text" inputmode="none" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-hidden="true" tabindex="-1">
@@ -74,6 +74,12 @@
     <section class="pane" data-pane="modes">
       <div class="modes" id="modes"></div>
       <p class="mode-desc" id="mode-desc"></p>
+      <div class="recrow">
+        <div class="seg" data-setting="recmode">
+          <button type="button" data-v="true">Rekord-Modus</button><button type="button" data-v="false">Frei spielen</button>
+        </div>
+        <p class="recinfo">Rekord-Modus: feste Standard-Einstellungen, nur hier zählen Rekorde. Frei spielen: eigene Einstellungen, keine Rekorde.</p>
+      </div>
       <button class="summary" id="summary" type="button"></button>
     </section>
 
@@ -89,25 +95,25 @@
       <div class="group">Spiel</div>
       <div class="row">
         <div class="section">Tempo</div>
-        <div class="seg" data-setting="speed">
+        <div class="seg rec-lock" data-setting="speed">
           <button type="button" data-v="slow">Langsam</button><button type="button" data-v="normal">Normal</button><button type="button" data-v="fast">Schnell</button>
         </div>
       </div>
       <div class="row">
         <div class="section">Spielfeld</div>
-        <div class="seg" data-setting="size">
+        <div class="seg rec-lock" data-setting="size">
           <button type="button" data-v="s">Klein</button><button type="button" data-v="m">Mittel</button><button type="button" data-v="l">Groß</button><button type="button" data-v="xl">Riesig</button>
         </div>
       </div>
       <div class="row">
         <div class="section">Äpfel</div>
-        <div class="seg" data-setting="apples">
+        <div class="seg rec-lock" data-setting="apples">
           <button type="button" data-v="1">1</button><button type="button" data-v="3">3</button><button type="button" data-v="5">5</button><button type="button" data-v="10">10</button>
         </div>
       </div>
       <div class="row">
         <div class="section">Goldäpfel</div>
-        <div class="seg" data-setting="bonus">
+        <div class="seg rec-lock" data-setting="bonus">
           <button type="button" data-v="on">An</button><button type="button" data-v="off">Aus</button>
         </div>
       </div>
@@ -125,7 +131,7 @@
       </div>
       <div class="row">
         <div class="section">Karte</div>
-        <div class="chips" id="maps"></div>
+        <div class="chips rec-lock" id="maps"></div>
       </div>
 
       <div class="group">Deine Schlange</div>
@@ -163,6 +169,6 @@
 </div>
 
 <script src="levels.js?v=12"></script>
-<script src="game.js?v=14"></script>
+<script src="game.js?v=15"></script>
 </body>
 </html>
