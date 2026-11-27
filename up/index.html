@@ -84,6 +84,7 @@
     <div class="row"><label>Modus</label><div class="seg" data-s="mode"></div><p class="modeinfo" id="modeinfo"></p></div>
     <div class="row"><label>Plattform-Abstand</label><div class="seg" data-s="gap"></div></div>
     <div class="row"><label>Fiese Plattformen</label><div class="seg" data-s="tricky"></div></div>
+    <div class="row"><label>Propellerhut und Jetpack</label><div class="seg" data-s="power"></div></div>
     <div class="row"><label>Steuerung am Handy</label><div class="seg" data-s="ctrl"></div></div>
     <div class="row"><label>Farbe</label><div class="seg colors" data-s="color"></div></div>
     <div class="row"><label>Welt</label><div class="seg" data-s="world"></div></div>
@@ -92,7 +93,7 @@
       <button class="btn primary" id="start" type="button">Spielen</button>
     </div>
     <p class="keys">◀ ▶ oder A / D lenken · Am Handy: links oder rechts tippen und halten (oder neigen)<br>
-      Grün: normal · Blau: bewegt sich · Braun: zerbricht · Weiß: verschwindet nach einem Sprung · Gelbe Feder: Supersprung</p>
+      Grün: normal · Blau: bewegt sich · Braun: zerbricht · Weiß: verschwindet nach einem Sprung · Gelbe Feder: Supersprung<br>Propellerhut: +150 m · Jetpack: +200 m</p>
   </div>
 </div>
 
@@ -107,6 +108,7 @@
     mode: { label: ['Rekord-Modus', 'Frei spielen'], val: [1, 0], def: 0 },
     gap:    { label: ['Eng', 'Normal', 'Weit'], val: [0.8, 1, 1.18], def: 1 },
     tricky: { label: ['Wenig', 'Normal', 'Viel'], val: [0.5, 1, 1.6], def: 1 },
+    power: { label: ['Aus', 'Selten', 'Normal', 'Oft'], val: [0, 0.025, 0.05, 0.1], def: 2 },
     ctrl:   { label: ['Tippen', 'Neigen'], val: [0, 1], def: 0 },
     color:  { label: ['', '', '', '', '', ''], val: ['#4e7cf6', '#ef4f8b', '#f58a1f', '#9a5cf0', '#14b8a6', '#e53935'], def: 0 },
     world:  { label: ['Wiese', 'Wüste', 'Schnee', 'Nacht'], val: ['meadow', 'desert', 'snow', 'night'], def: 0 },
@@ -122,7 +124,7 @@
   try { saved = JSON.parse(localStorage.getItem('up.settings') || '{}'); } catch (e) {}
   for (const k in OPTS) set[k] = Number.isInteger(saved[k]) && saved[k] < OPTS[k].val.length ? saved[k] : OPTS[k].def;
   // Rekord-Modus: feste Standard-Einstellungen, nur dann zählen Rekorde
-  const REC = { gap: 1, tricky: 1 };
+  const REC = { gap: 1, tricky: 1, power: 2 };
   const rec = () => set.mode === 0;
   const idx = (k) => (rec() && k in REC ? REC[k] : set[k]);
   const v = (k) => OPTS[k].val[idx(k)];
@@ -132,7 +134,7 @@
 
   function buildMenu() {
     const mi = document.getElementById('modeinfo');
-    if (mi) mi.textContent = rec() ? 'Feste Einstellungen, nur hier zählen Rekorde: Plattform-Abstand Normal · fiese Plattformen Normal.' : 'Eigene Einstellungen, hier werden keine Rekorde gespeichert.';
+    if (mi) mi.textContent = rec() ? 'Feste Einstellungen, nur hier zählen Rekorde: Plattform-Abstand Normal · fiese Plattformen Normal · Hut und Jetpack Normal.' : 'Eigene Einstellungen, hier werden keine Rekorde gespeichert.';
     document.querySelectorAll('.seg[data-s]').forEach((seg) => {
       const k = seg.dataset.s; seg.innerHTML = '';
       OPTS[k].label.forEach((l, i) => {
@@ -143,7 +145,7 @@
         if (rec() && k in REC) b.disabled = true;
         b.onclick = () => {
           set[k] = i; save(); buildMenu(); applyWorld();
-          if (k === 'gap' || k === 'tricky' || k === 'mode') { newGame(); state = 'ready'; }
+          if (k === 'gap' || k === 'tricky' || k === 'power' || k === 'mode') { newGame(); state = 'ready'; }
           if (k === 'ctrl' && i === 1) askTilt();
         };
         seg.appendChild(b);
@@ -152,10 +154,11 @@
   }
 
   // ---------- Spielwelt (y wächst nach oben) ----------
+  const BOOST = { hat: { h: 1500, v: 950, name: 'Propellerhut', m: 150 }, jet: { h: 2000, v: 1250, name: 'Jetpack', m: 200 } };
   const W = 360, R = 13, GRAV = 1500, JUMP = 760, SPRING = 1280, PW = 64, PH = 14;
   let ball, plats, camY, maxY, score, best, state = 'ready', t = 0, overT = 0, parts = [], topGen = 0;
   function newGame() {
-    ball = { x: W / 2, y: 40, vx: 0, vy: JUMP, sq: 0 };
+    ball = { x: W / 2, y: 40, vx: 0, vy: JUMP, sq: 0, boost: null };
     plats = [{ x: 0, y: 0, w: W, type: 'ground' }];
     camY = 0; maxY = 0; score = 0; parts = []; topGen = 0; best = getBest();
     while (topGen < 900) gen();
@@ -174,6 +177,8 @@
       else if (r < 0.19 + diff * 0.12) type = 'once';
     }
     const p = { x: Math.random() * (W - w), y: topGen, w, type, vx: (Math.random() < 0.5 ? -1 : 1) * (50 + diff * 80), spring: type === 'normal' && Math.random() < 0.06 };
+    // Power-ups liegen nur auf normalen oder beweglichen Plattformen ohne Feder
+    if (h > 300 && !p.spring && (type === 'normal' || type === 'move') && Math.random() < v('power')) p.item = Math.random() < 0.62 ? 'hat' : 'jet';
     plats.push(p);
     // Zerbrechliche Plattformen bekommen immer eine sichere daneben, damit es fair bleibt
     if (type === 'break') { topGen += 18; plats.push({ x: (p.x + W / 2) % (W - PW), y: topGen, w: PW, type: 'normal', vx: 0 }); }
@@ -218,11 +223,21 @@
     ball.x += ball.vx * dt;
     if (ball.x < -R) ball.x += W + 2 * R; if (ball.x > W + R) ball.x -= W + 2 * R; // rechts raus, links rein
     const oldY = ball.y;
-    ball.vy -= GRAV * dt; ball.y += ball.vy * dt;
+    if (ball.boost) {
+      // Fliegen: konstant nach oben, keine Plattformen, bis die Strecke geschafft ist
+      const b = ball.boost; ball.vy = BOOST[b.kind].v; ball.y += ball.vy * dt;
+      if (Math.random() < 0.7) parts.push({ x: ball.x + (Math.random() - 0.5) * 8, y: ball.y - R, vx: (Math.random() - 0.5) * 60, vy: -120 - Math.random() * 80, life: 0.4, c: b.kind === 'jet' ? (Math.random() < 0.5 ? '#ff9a2e' : '#ffd54f') : '#ffffff' });
+      if (ball.y >= b.until) { ball.boost = null; ball.vy = JUMP * 0.75; beep(520, 0.15, 'triangle', 0.05); }
+    } else { ball.vy -= GRAV * dt; ball.y += ball.vy * dt; }
     ball.sq = Math.max(0, ball.sq - dt * 5);
     for (const p of plats) {
       if (p.type === 'move') { p.x += p.vx * dt; if (p.x < 0 || p.x + p.w > W) { p.vx *= -1; p.x = Math.max(0, Math.min(W - p.w, p.x)); } }
       if (p.dead) { p.fall = (p.fall || 0) + dt; continue; }
+      if (p.item && !ball.boost && Math.abs(ball.x - (p.x + p.w / 2)) < R + 13 && Math.abs(ball.y - (p.y + 14)) < R + 13) {
+        beep(p.item === 'jet' ? 220 : 440, 0.35, 'sawtooth', 0.05);
+        ball.boost = { kind: p.item, until: ball.y + BOOST[p.item].h }; p.item = null; continue;
+      }
+      if (ball.boost) continue;
       // Landen nur von oben
       if (ball.vy < 0 && oldY - R >= p.y - 1 && ball.y - R <= p.y && ball.x > p.x - R * 0.6 && ball.x < p.x + p.w + R * 0.6) {
         if (p.type === 'break') { p.dead = true; crumbs(p); beep(180, 0.12, 'square', 0.05); continue; }
@@ -301,6 +316,28 @@
   function rr(x, y, w, h, r) { ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, w, h, r) : ctx.rect(x, y, w, h); }
   function shade(hex, k) { const n = parseInt(hex.slice(1), 16), f = (c) => Math.round(c * k); return `rgb(${f(n >> 16)},${f(n >> 8 & 255)},${f(n & 255)})`; }
   const sy = (y) => VH - 60 - (y - camY);
+  // Propellerhut: Kappe mit drehendem Propeller · Jetpack: zwei Tanks mit Flamme
+  function drawItem(kind, x, y, worn) {
+    ctx.save(); ctx.translate(x, y);
+    if (kind === 'hat') {
+      const yo = worn ? -R + 1 : 4;
+      ctx.fillStyle = '#e53935'; ctx.beginPath(); ctx.arc(0, yo, 9, Math.PI, 0); ctx.fill();
+      ctx.fillStyle = '#f4c20d'; ctx.fillRect(-11, yo - 1, 22, 3);
+      ctx.fillStyle = '#555'; ctx.fillRect(-1, yo - 13, 2, 5);
+      const spin = Math.cos(t * (worn ? 40 : 10));
+      ctx.fillStyle = '#4e7cf6'; ctx.beginPath(); ctx.ellipse(0, yo - 13, 12 * Math.abs(spin) + 2, 2.5, 0, 0, 7); ctx.fill();
+    } else {
+      const xo = worn ? -R - 4 : 0, yo = worn ? 0 : -2;
+      for (const dx of worn ? [0] : [-5, 5]) {
+        ctx.fillStyle = '#8a96a3'; rr(xo + dx - 4, yo - 9, 8, 18, 4); ctx.fill();
+        ctx.fillStyle = '#c9d3dd'; rr(xo + dx - 3, yo - 8, 3, 12, 2); ctx.fill();
+        if (worn) { const fl = 10 + Math.random() * 8; ctx.fillStyle = '#ff9a2e'; ctx.beginPath(); ctx.moveTo(xo + dx - 4, yo + 9); ctx.lineTo(xo + dx + 4, yo + 9); ctx.lineTo(xo + dx, yo + 9 + fl); ctx.fill();
+          ctx.fillStyle = '#ffd54f'; ctx.beginPath(); ctx.moveTo(xo + dx - 2, yo + 9); ctx.lineTo(xo + dx + 2, yo + 9); ctx.lineTo(xo + dx, yo + 9 + fl * 0.6); ctx.fill(); }
+      }
+      if (!worn) { ctx.fillStyle = '#5b6570'; ctx.fillRect(-6, yo - 4, 12, 3); }
+    }
+    ctx.restore();
+  }
   function draw() {
     const w = WORLDS[v('world')];
     ctx.setTransform(dpr * scale, 0, 0, dpr * scale, 0, 0);
@@ -329,6 +366,7 @@
       ctx.fillStyle = side; rr(p.x, y, p.w, PH, 7); ctx.fill();
       ctx.fillStyle = top; rr(p.x, y, p.w, PH - 4, 7); ctx.fill();
       if (p.type === 'break') { ctx.strokeStyle = 'rgba(0,0,0,.3)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(p.x + p.w * 0.35, y + 1); ctx.lineTo(p.x + p.w * 0.45, y + PH - 3); ctx.moveTo(p.x + p.w * 0.7, y + 1); ctx.lineTo(p.x + p.w * 0.62, y + PH - 3); ctx.stroke(); }
+      if (p.item) drawItem(p.item, p.x + p.w / 2, y - 12, false);
       if (p.spring) {
         const sx = p.x + p.w / 2, ext = p.sprung ? 10 : 4;
         ctx.strokeStyle = '#8a8a8a'; ctx.lineWidth = 2; ctx.beginPath();
@@ -340,7 +378,7 @@
     }
     for (const p of parts) { ctx.globalAlpha = Math.max(0, p.life); ctx.fillStyle = p.c; ctx.fillRect(p.x - 3, sy(p.y) - 3, 6, 6); }
     ctx.globalAlpha = 1;
-    // Ball (gestaucht beim Aufprall)
+    // Ball (gestaucht beim Aufprall), mit Hut oder Jetpack beim Fliegen
     const col = v('color'), by = sy(ball.y), s = ball.sq * 0.28;
     for (const dx of [0, ball.x < R ? W : ball.x > W - R ? -W : null]) {
       if (dx === null) continue;
@@ -349,10 +387,14 @@
       ctx.fillStyle = col; ctx.beginPath(); ctx.arc(0, 0, R, 0, 7); ctx.fill();
       ctx.fillStyle = 'rgba(255,255,255,.4)'; ctx.beginPath(); ctx.ellipse(-R * 0.35, -R * 0.4, R * 0.35, R * 0.2, -0.5, 0, 7); ctx.fill();
       ctx.restore();
+      if (ball.boost) drawItem(ball.boost.kind, ball.x + dx, by, true);
     }
     ctx.textAlign = 'center';
     if (state === 'ready') { ctx.fillStyle = 'rgba(20,35,10,.75)'; rr(W / 2 - 140, VH / 2 - 90, 280, 64, 16); ctx.fill(); ctx.fillStyle = '#fff'; ctx.font = '600 17px Fredoka, sans-serif'; ctx.fillText('◀ ▶ oder links / rechts tippen', W / 2, VH / 2 - 62); ctx.font = '500 14px Fredoka, sans-serif'; ctx.fillText('Spring so hoch du kannst!', W / 2, VH / 2 - 40); }
     ctx.fillStyle = k > 0.4 ? 'rgba(255,255,255,.9)' : 'rgba(30,50,20,.55)'; ctx.font = '700 40px Fredoka, sans-serif'; ctx.fillText(score, W / 2, 62);
+    if (ball.boost) { const B = BOOST[ball.boost.kind], left = Math.max(0, (ball.boost.until - ball.y) / B.h);
+      ctx.font = '600 15px Fredoka, sans-serif'; ctx.fillText(B.name + ' +' + B.m + ' m', W / 2, 88);
+      ctx.fillStyle = 'rgba(0,0,0,.2)'; rr(W / 2 - 60, 96, 120, 6, 3); ctx.fill(); ctx.fillStyle = '#ffd54f'; rr(W / 2 - 60, 96, 120 * left, 6, 3); ctx.fill(); }
   }
 
   let last = performance.now();
